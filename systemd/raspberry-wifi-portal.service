@@ -1,0 +1,16 @@
+[Unit]
+Description=Raspberry Pi Wi-Fi Setup Portal
+Wants=NetworkManager.service network-online.target
+After=NetworkManager.service network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/raspberry-wifi-portal
+EnvironmentFile=-/etc/raspberry-wifi-portal/portal.env
+ExecStart=/opt/raspberry-wifi-portal/.venv/bin/python /opt/raspberry-wifi-portal/app.py
+Restart=on-failure
+RestartSec=4
+
+[Install]
+WantedBy=multi-user.target

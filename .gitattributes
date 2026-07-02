@@ -1,0 +1,19 @@
+* text=auto
+
+.gitattributes text eol=lf
+*.css text eol=lf
+*.env text eol=lf
+*.example text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.service text eol=lf
+*.sh text eol=lf
+*.txt text eol=lf
+
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gz binary
+*.zip binary

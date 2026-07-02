@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ page_title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <main class="page-shell narrow">
+      <section class="hero-card">
+        <p class="eyebrow">Esito configurazione</p>
+        <h1>
+          {% if pending %}
+          Cambio rete in corso
+          {% elif success %}
+          Connessione aggiornata
+          {% else %}
+          Configurazione non riuscita
+          {% endif %}
+        </h1>
+        <p class="lead">{{ message }}</p>
+
+        {% if pending %}
+        <p class="lead">
+          Tra pochi secondi il telefono perdera' la rete <strong>Pi-Setup</strong>. Se la configurazione fallisce,
+          l'hotspot verra' riattivato e potrai ricollegarti a questo portale.
+        </p>
+        {% endif %}
+
+        <div class="status-grid">
+          <article>
+            <span class="label">Connessione</span>
+            <strong>{{ connection_name or "n/d" }}</strong>
+          </article>
+          <article>
+            <span class="label">Connettivita'</span>
+            <strong>{{ connectivity or "n/d" }}</strong>
+          </article>
+        </div>
+
+        <div class="actions">
+          <a href="/" class="secondary-link">Torna al portale</a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

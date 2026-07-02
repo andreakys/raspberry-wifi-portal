@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+export PORTAL_HOST="${PORTAL_HOST:-0.0.0.0}"
+export PORTAL_PORT="${PORTAL_PORT:-8080}"
+export WIFI_INTERFACE="${WIFI_INTERFACE:-wlan0}"
+export HOTSPOT_INTERFACE="${HOTSPOT_INTERFACE:-${WIFI_INTERFACE}}"
+export CLIENT_WIFI_INTERFACE="${CLIENT_WIFI_INTERFACE:-${WIFI_INTERFACE}}"
+export HOTSPOT_CONNECTION_NAME="${HOTSPOT_CONNECTION_NAME:-Pi Setup AP}"
+export HOTSPOT_SSID="${HOTSPOT_SSID:-Pi-Setup}"
+export HOTSPOT_PASSWORD="${HOTSPOT_PASSWORD:-ChangeMe123!}"
+export HOTSPOT_ADDRESS="${HOTSPOT_ADDRESS:-192.168.4.1/24}"
+
+cd "${PROJECT_DIR}"
+exec python3 app.py

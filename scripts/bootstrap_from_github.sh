@@ -12,7 +12,7 @@ CLONE_DIR="/tmp/raspberry-wifi-portal-bootstrap"
 
 if [[ -z "${REPO_URL}" ]]; then
   echo "Uso: sudo bash bootstrap_from_github.sh <repo-url> [branch] [opzioni-install]"
-  echo "Esempio: sudo bash bootstrap_from_github.sh https://github.com/TUO-USER/raspberry-wifi-portal.git main --profile balanced"
+  echo "Esempio: sudo bash bootstrap_from_github.sh https://github.com/andreakys/raspberry-wifi-portal.git main --profile balanced"
   exit 1
 fi
 

@@ -61,7 +61,7 @@ Se il progetto e' gia' pubblicato su GitHub:
 sudo apt-get update
 sudo apt-get install -y git
 cd /tmp
-git clone https://github.com/TUO-USER/raspberry-wifi-portal.git
+git clone https://github.com/andreakys/raspberry-wifi-portal.git
 cd raspberry-wifi-portal
 sudo chmod +x scripts/install.sh
 sudo ./scripts/install.sh --interactive
@@ -83,7 +83,7 @@ sudo ./scripts/install.sh --ssid Pi-Setup --password 'ChangeMe123!' --profile ba
 Per un flusso ancora piu' rapido:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/TUO-USER/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/TUO-USER/raspberry-wifi-portal.git main --profile balanced
+curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/andreakys/raspberry-wifi-portal.git main --profile balanced
 ```
 
 ### 5.1 Preparare il pacchetto sul PC Windows
@@ -460,8 +460,10 @@ raspberry-wifi-portal
 
 ### 12.3 Push verso GitHub
 
+Repository pubblicato:
+
 ```powershell
-git remote add origin https://github.com/TUO-USER/raspberry-wifi-portal.git
+git remote add origin https://github.com/andreakys/raspberry-wifi-portal.git
 git branch -M main
 git push -u origin main
 ```
@@ -472,7 +474,7 @@ git push -u origin main
 sudo apt-get update
 sudo apt-get install -y git
 cd /tmp
-git clone https://github.com/TUO-USER/raspberry-wifi-portal.git
+git clone https://github.com/andreakys/raspberry-wifi-portal.git
 cd raspberry-wifi-portal
 sudo chmod +x scripts/install.sh
 sudo ./scripts/install.sh --interactive
@@ -481,7 +483,7 @@ sudo ./scripts/install.sh --interactive
 ### 12.4.b Bootstrap diretto da GitHub
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/TUO-USER/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/TUO-USER/raspberry-wifi-portal.git main --profile balanced
+curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/andreakys/raspberry-wifi-portal.git main --profile balanced
 ```
 
 ### 12.5 Aggiornamento dal repository GitHub

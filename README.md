@@ -20,7 +20,7 @@ Sul Raspberry:
 sudo apt-get update
 sudo apt-get install -y git
 cd /tmp
-git clone https://github.com/TUO-USER/raspberry-wifi-portal.git
+git clone https://github.com/andreakys/raspberry-wifi-portal.git
 cd raspberry-wifi-portal
 sudo chmod +x scripts/install.sh
 sudo ./scripts/install.sh --interactive
@@ -37,7 +37,7 @@ sudo ./scripts/install.sh --ssid Pi-Setup --password 'ChangeMe123!' --profile ba
 Se vuoi un flusso ancora piu' semplice, puoi pubblicare anche `scripts/bootstrap_from_github.sh` e usarlo cosi':
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/TUO-USER/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/TUO-USER/raspberry-wifi-portal.git main --profile balanced
+curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/andreakys/raspberry-wifi-portal.git main --profile balanced
 ```
 
 ### Dopo l'installazione
@@ -448,10 +448,10 @@ raspberry-wifi-portal
 
 ### 3. Collegare il repository locale a GitHub
 
-Sostituisci `TUO-USER` con il tuo account:
+Repository pubblicato:
 
 ```powershell
-git remote add origin https://github.com/TUO-USER/raspberry-wifi-portal.git
+git remote add origin https://github.com/andreakys/raspberry-wifi-portal.git
 git branch -M main
 git push -u origin main
 ```
@@ -464,7 +464,7 @@ Sul Raspberry:
 sudo apt-get update
 sudo apt-get install -y git
 cd /tmp
-git clone https://github.com/TUO-USER/raspberry-wifi-portal.git
+git clone https://github.com/andreakys/raspberry-wifi-portal.git
 cd raspberry-wifi-portal
 sudo chmod +x scripts/install.sh
 sudo ./scripts/install.sh --interactive
@@ -475,7 +475,7 @@ sudo ./scripts/install.sh --interactive
 Dopo aver pubblicato il repository, puoi anche usare questo comando unico:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/TUO-USER/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/TUO-USER/raspberry-wifi-portal.git main --profile balanced
+curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/andreakys/raspberry-wifi-portal.git main --profile balanced
 ```
 
 ### 5. Aggiornare dal repository GitHub

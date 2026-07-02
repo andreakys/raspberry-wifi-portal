@@ -10,7 +10,7 @@ Sul Raspberry:
 sudo apt-get update
 sudo apt-get install -y git
 cd /tmp
-git clone https://github.com/TUO-USER/raspberry-wifi-portal.git
+git clone https://github.com/andreakys/raspberry-wifi-portal.git
 cd raspberry-wifi-portal
 sudo chmod +x scripts/install.sh
 sudo ./scripts/install.sh --interactive
@@ -56,13 +56,13 @@ Opzioni utili:
 Dopo aver pubblicato il repository:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/TUO-USER/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/TUO-USER/raspberry-wifi-portal.git main --profile balanced
+curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/andreakys/raspberry-wifi-portal.git main --profile balanced
 ```
 
 Puoi aggiungere anche SSID e password:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/TUO-USER/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/TUO-USER/raspberry-wifi-portal.git main --ssid Pi-Setup --password 'ChangeMe123!' --profile balanced
+curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/andreakys/raspberry-wifi-portal.git main --ssid Pi-Setup --password 'ChangeMe123!' --profile balanced
 ```
 
 ## Aggiornamento

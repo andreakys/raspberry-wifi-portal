@@ -27,8 +27,8 @@ TMP_DIR = ROOT / "tmp" / "pdfs"
 OUTPUT_PDF = OUTPUT_DIR / "manuale-utente-raspberry-wifi-portal.pdf"
 DOCS_PDF = ROOT / "docs" / "manuale-utente-raspberry-wifi-portal.pdf"
 CODE_WRAP_WIDTH = 88
-DOCUMENT_VERSION = "1.5"
-DOCUMENT_DATE = "2 luglio 2026"
+DOCUMENT_VERSION = "1.6"
+DOCUMENT_DATE = "3 luglio 2026"
 
 
 def build_styles():
@@ -239,14 +239,14 @@ def provisioning_diagram() -> Drawing:
 
 def recovery_diagram() -> Drawing:
     return workflow_diagram(
-        "Recovery hotspot - quando riaprire Pi-Setup",
+        "Recovery hotspot - Wi-Fi client separata dalla LAN",
         [
             ("Boot", "attesa iniziale", "#ffffff"),
-            ("Controllo", "rete assente", "#e8f1fb"),
-            ("Soglia", "perdita lunga", "#fff7ed"),
+            ("Controllo", "Wi-Fi client", "#e8f1fb"),
+            ("Soglia", "Wi-Fi assente", "#fff7ed"),
             ("Hotspot", "Pi-Setup", "#eaf7ef"),
         ],
-        "Le disconnessioni brevi vengono tollerate prima di riattivare l'hotspot.",
+        "La LAN cablata resta informativa: non blocca il recovery della Wi-Fi client.",
     )
 
 

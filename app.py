@@ -7,7 +7,6 @@ from flask import Flask, jsonify, render_template, request
 
 from config import load_config
 from services.network_manager import (
-    CONNECTED_CONNECTIVITY_STATES,
     CONNECTED_DEVICE_STATES,
     CONNECTING_DEVICE_STATES,
     NetworkManagerError,
@@ -103,10 +102,10 @@ def _apply_configuration(payload: dict[str, str]) -> None:
     _pause_hotspot_recovery(config.hotspot_cooldown_seconds, "post-provisioning")
 
 
-def _network_is_healthy(status: dict[str, object]) -> bool:
-    connectivity = str(status.get("connectivity", "")).lower()
+def _wifi_client_is_healthy(status: dict[str, object]) -> bool:
     device_state = str(status.get("device_state", "")).lower()
-    return connectivity in CONNECTED_CONNECTIVITY_STATES or device_state in CONNECTED_DEVICE_STATES
+    active_client_connection = status.get("active_client_connection")
+    return bool(active_client_connection) and device_state in CONNECTED_DEVICE_STATES
 
 
 def _network_is_recovering(status: dict[str, object]) -> bool:
@@ -154,13 +153,13 @@ def _run_recovery_monitor() -> None:
             time.sleep(config.recovery_check_interval_seconds)
             continue
 
-        if _network_is_healthy(status):
+        if _wifi_client_is_healthy(status):
             recovery_runtime["last_client_seen_at"] = now
             recovery_runtime["disconnected_since"] = None
             _set_recovery_state(
                 state="monitoring",
-                reason="network-ok",
-                message="Rete disponibile, hotspot temporaneo non necessario.",
+                reason="wifi-client-ok",
+                message="Wi-Fi client disponibile, hotspot temporaneo non necessario.",
                 seconds_without_network=0,
             )
             time.sleep(config.recovery_check_interval_seconds)
@@ -173,6 +172,7 @@ def _run_recovery_monitor() -> None:
         since_boot = int(now - float(recovery_runtime["started_at"]))
         suspend_until = float(recovery_runtime["suspend_until"])
         active_client_connection = status.get("active_client_connection")
+        lan_connected = bool(status.get("lan_connected"))
 
         if now < suspend_until:
             _set_recovery_state(
@@ -189,23 +189,35 @@ def _run_recovery_monitor() -> None:
             _set_recovery_state(
                 state="reconnecting",
                 reason="reconnecting",
-                message="Il Raspberry sta tentando il recupero della rete Wi-Fi aziendale.",
+                message="La Wi-Fi client sta tentando il recupero della rete configurata.",
                 seconds_without_network=disconnected_for,
             )
         elif recovery_runtime["last_client_seen_at"] is None and not active_client_connection:
             threshold = config.boot_connection_grace_seconds
+            message = "Attendo il tempo di grace al boot prima di riaprire l'hotspot per configurare la Wi-Fi."
+            if lan_connected:
+                message = (
+                    "LAN cablata presente, ma Wi-Fi client non connessa: "
+                    "attendo il grace al boot prima di aprire l'hotspot di setup."
+                )
             _set_recovery_state(
                 state="boot-wait",
                 reason="boot-grace",
-                message="Attendo il tempo di grace al boot prima di riaprire l'hotspot.",
+                message=message,
                 seconds_without_network=since_boot,
             )
         else:
             threshold = config.disconnect_hotspot_threshold_seconds
+            message = "Wi-Fi client assente, ma ancora entro la soglia di tolleranza."
+            if lan_connected:
+                message = (
+                    "LAN cablata presente, ma Wi-Fi client assente: "
+                    "attendo la soglia prima di riaprire l'hotspot."
+                )
             _set_recovery_state(
                 state="waiting-loss-threshold",
-                reason="temporary-loss",
-                message="Rete assente, ma ancora entro la soglia di tolleranza per disconnessioni temporanee.",
+                reason="wifi-client-loss",
+                message=message,
                 seconds_without_network=disconnected_for,
             )
 
@@ -214,10 +226,15 @@ def _run_recovery_monitor() -> None:
                 network_manager.ensure_hotspot()
                 recovery_runtime["disconnected_since"] = None
                 recovery_runtime["suspend_until"] = now + config.hotspot_cooldown_seconds
+                reactivation_reason = (
+                    "wifi-client-not-configured"
+                    if recovery_runtime["last_client_seen_at"] is None
+                    else "wifi-client-loss"
+                )
                 _set_recovery_state(
                     state="hotspot-reactivated",
-                    reason="boot-failed" if recovery_runtime["last_client_seen_at"] is None else "network-loss",
-                    message="Hotspot temporaneo riattivato automaticamente dopo perdita prolungata della rete.",
+                    reason=reactivation_reason,
+                    message="Hotspot temporaneo riattivato automaticamente per configurare o recuperare la Wi-Fi client.",
                     seconds_without_network=0,
                     hotspot_reactivation_count=int(recovery_state["hotspot_reactivation_count"]) + 1,
                 )

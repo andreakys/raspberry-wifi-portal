@@ -167,7 +167,7 @@ raspberry-wifi-portal/
 
 ### 1. Boot
 
-Il servizio parte come `root`, verifica lo stato del Wi-Fi e attiva l'hotspot se non esiste gia' una connessione funzionante.
+Il servizio parte come `root`, distingue LAN cablata e Wi-Fi client, e attiva l'hotspot se la Wi-Fi client non e' disponibile dopo le soglie configurate.
 
 ### 2. Accesso da smartphone
 
@@ -268,9 +268,24 @@ Se non imposti `HOTSPOT_INTERFACE` e `CLIENT_WIFI_INTERFACE`, il comportamento r
 
 Il portale ora include un monitor in background che distingue tre casi:
 
-- `boot senza rete`: il Raspberry attende `BOOT_CONNECTION_GRACE_SECONDS` prima di riaprire `Pi-Setup`
-- `perdita temporanea`: se la Wi-Fi aziendale cade per pochi secondi o NetworkManager sta ancora tentando il recupero, l'hotspot non viene riattivato
-- `perdita prolungata`: se la rete resta assente oltre `DISCONNECT_HOTSPOT_THRESHOLD_SECONDS`, l'hotspot viene riaperto automaticamente
+- `boot senza Wi-Fi client`: il Raspberry attende `BOOT_CONNECTION_GRACE_SECONDS` prima di riaprire `Pi-Setup`
+- `perdita temporanea Wi-Fi`: se la Wi-Fi aziendale cade per pochi secondi o NetworkManager sta ancora tentando il recupero, l'hotspot non viene riattivato
+- `perdita prolungata Wi-Fi`: se la Wi-Fi client resta assente oltre `DISCONNECT_HOTSPOT_THRESHOLD_SECONDS`, l'hotspot viene riaperto automaticamente
+
+La LAN cablata viene trattata come connettivita' separata: se `eth0` e' collegata, il portale mostra che la LAN e' presente, ma la sola LAN non blocca piu' il recovery dell'hotspot quando la Wi-Fi client non e' configurata o non e' connessa.
+
+### Matrice recovery LAN/Wi-Fi
+
+| LAN cablata | Wi-Fi client | Hotspot spento: cosa fa il recovery |
+| --- | --- | --- |
+| Presente | Connessa | Non apre `Pi-Setup`: Wi-Fi client ok |
+| Presente | Configurata ma non connessa al boot | Attende il grace al boot; poi apre `Pi-Setup` |
+| Presente | Persa dopo una connessione valida | Attende la soglia di perdita prolungata; poi apre `Pi-Setup` |
+| Presente | Non configurata | Attende grace al boot; poi apre `Pi-Setup` anche se la LAN funziona |
+| Assente | Connessa | Non apre `Pi-Setup`: Wi-Fi client ok |
+| Assente | Configurata ma router non disponibile al boot | Attende il grace al boot; poi apre `Pi-Setup` |
+| Assente | Persa dopo una connessione valida | Attende la soglia di perdita prolungata; poi apre `Pi-Setup` |
+| Assente | Non configurata | Attende grace al boot; poi apre `Pi-Setup` |
 
 La soglia piu' importante da tarare e':
 

@@ -28,6 +28,14 @@
             <strong>{{ status.active_connection or "Nessuna" }}</strong>
           </article>
           <article>
+            <span class="label">LAN cablata</span>
+            <strong>{{ "Presente" if status.lan_connected else "Assente" }}</strong>
+          </article>
+          <article>
+            <span class="label">Wi-Fi configurata</span>
+            <strong>{{ "Si" if status.wifi_client_configured else "No" }}</strong>
+          </article>
+          <article>
             <span class="label">Connettivita'</span>
             <strong>{{ status.connectivity }}</strong>
           </article>

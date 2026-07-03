@@ -2,8 +2,8 @@
 
 ## Raspberry Pi Wi-Fi Setup Portal
 
-Versione documento: 1.5
-Data: 2 luglio 2026
+Versione documento: 1.6
+Data: 3 luglio 2026
 
 ## 1. Scopo
 
@@ -222,9 +222,22 @@ sudo journalctl -u raspberry-wifi-portal.service -f
 
 Il sistema controlla periodicamente lo stato della rete e distingue:
 
-- boot senza rete valida
-- perdita temporanea della rete aziendale
-- perdita prolungata della rete aziendale
+- boot senza Wi-Fi client valida
+- perdita temporanea della Wi-Fi aziendale
+- perdita prolungata della Wi-Fi aziendale
+
+La LAN cablata viene trattata come connettivita' separata: se `eth0` e' collegata, il portale mostra che la LAN e' presente, ma la sola LAN non blocca piu' il recovery dell'hotspot quando la Wi-Fi client non e' configurata o non e' connessa.
+
+Matrice recovery LAN/Wi-Fi:
+
+- LAN presente, Wi-Fi client connessa: non apre `Pi-Setup`, perche' la Wi-Fi client e' ok.
+- LAN presente, Wi-Fi client configurata ma non connessa al boot: attende il grace al boot, poi apre `Pi-Setup`.
+- LAN presente, Wi-Fi client persa dopo una connessione valida: attende la soglia di perdita prolungata, poi apre `Pi-Setup`.
+- LAN presente, Wi-Fi client non configurata: attende il grace al boot, poi apre `Pi-Setup` anche se la LAN funziona.
+- LAN assente, Wi-Fi client connessa: non apre `Pi-Setup`, perche' la Wi-Fi client e' ok.
+- LAN assente, Wi-Fi client configurata ma router non disponibile al boot: attende il grace al boot, poi apre `Pi-Setup`.
+- LAN assente, Wi-Fi client persa dopo una connessione valida: attende la soglia di perdita prolungata, poi apre `Pi-Setup`.
+- LAN assente, Wi-Fi client non configurata: attende il grace al boot, poi apre `Pi-Setup`.
 
 Valori consigliati:
 

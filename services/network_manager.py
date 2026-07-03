@@ -104,6 +104,7 @@ class NetworkManagerService:
         return connection_name
 
     def current_status(self) -> dict[str, Any]:
+        interfaces = self.list_ip_interfaces()
         return {
             "wifi_interface": self.config.wifi_interface,
             "hotspot_interface": self.config.hotspot_interface,
@@ -112,11 +113,24 @@ class NetworkManagerService:
             "device_state": self.device_state(),
             "active_connection": self.active_connection_name(),
             "active_client_connection": self.active_client_connection_name(),
+            "wifi_client_configured": self.wifi_client_configured(),
             "hotspot_active": self.hotspot_active(),
             "hotspot_ssid": self.config.hotspot_ssid,
             "portal_address": self.config.hotspot_address.split("/", 1)[0],
-            "interfaces": self.list_ip_interfaces(),
+            "lan_connected": self._lan_connected(interfaces),
+            "lan_interfaces": self._lan_interfaces(interfaces),
+            "interfaces": interfaces,
         }
+
+    def wifi_client_configured(self) -> bool:
+        result = self._run_nmcli("-t", "-f", "NAME,TYPE", "connection", "show", check=False)
+        for line in result.stdout.splitlines():
+            if not line.strip():
+                continue
+            name, _, connection_type = line.partition(":")
+            if connection_type == "wifi" and name != self.config.hotspot_connection_name:
+                return True
+        return False
 
     def list_ip_interfaces(self) -> list[dict[str, Any]]:
         result = self._run_nmcli("-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device", "status")
@@ -158,6 +172,17 @@ class NetworkManagerService:
             )
 
         return interfaces
+
+    def _lan_connected(self, interfaces: list[dict[str, Any]]) -> bool:
+        return any(
+            item.get("type") == "ethernet"
+            and item.get("state") == "connected"
+            and bool(item.get("ipv4_addresses"))
+            for item in interfaces
+        )
+
+    def _lan_interfaces(self, interfaces: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return [item for item in interfaces if item.get("type") == "ethernet"]
 
     def configure_interface_ipv4(self, payload: dict[str, str]) -> str:
         interface = payload.get("interface", "").strip()

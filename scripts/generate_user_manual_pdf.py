@@ -27,8 +27,8 @@ TMP_DIR = ROOT / "tmp" / "pdfs"
 OUTPUT_PDF = OUTPUT_DIR / "manuale-utente-raspberry-wifi-portal.pdf"
 DOCS_PDF = ROOT / "docs" / "manuale-utente-raspberry-wifi-portal.pdf"
 CODE_WRAP_WIDTH = 88
-DOCUMENT_VERSION = "1.6"
-DOCUMENT_DATE = "3 luglio 2026"
+DOCUMENT_VERSION = "1.7"
+DOCUMENT_DATE = "4 luglio 2026"
 
 
 def build_styles():

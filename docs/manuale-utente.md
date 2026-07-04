@@ -2,8 +2,8 @@
 
 ## Raspberry Pi Wi-Fi Setup Portal
 
-Versione documento: 1.6
-Data: 3 luglio 2026
+Versione documento: 1.7
+Data: 4 luglio 2026
 
 ## 1. Scopo
 
@@ -14,7 +14,8 @@ Il sistema crea un hotspot temporaneo chiamato `Pi-Setup` quando il Raspberry no
 ## 2. Funzioni principali
 
 - hotspot temporaneo per il primo accesso
-- pagina web locale per la configurazione
+- pagina web locale protetta da password per la configurazione
+- scansione manuale delle reti Wi-Fi disponibili dal portale
 - separazione opzionale tra hotspot e Wi-Fi client con due interfacce
 - supporto reti Open
 - supporto reti WPA2/WPA3 Personal
@@ -71,13 +72,14 @@ L'installazione guidata chiede:
 
 - SSID dell'hotspot temporaneo
 - password dell'hotspot temporaneo
+- password di accesso al portale, oppure la genera automaticamente se lasci vuoto
 - porta HTTP del portale
 - profilo recovery: `stable`, `balanced` o `unstable`
 
 Per installazione non interattiva:
 
 ```bash
-sudo ./scripts/install.sh --ssid Pi-Setup --password 'ChangeMe123!' --profile balanced
+sudo ./scripts/install.sh --ssid Pi-Setup --password 'ChangeMe123!' --portal-password 'CambiaQuestaPassword!' --profile balanced
 ```
 
 Per un flusso ancora piu' rapido:
@@ -126,13 +128,13 @@ L'installer:
 - crea il file `/etc/raspberry-wifi-portal/portal.env`
 - conserva `portal.env` durante reinstallazioni e aggiornamenti
 - puo' essere rilanciato anche da `/opt/raspberry-wifi-portal`
-- accetta opzioni `--ssid`, `--password`, `--port`, `--profile`, `--skip-apt` e `--no-start`
+- accetta opzioni `--ssid`, `--password`, `--portal-password`, `--port`, `--profile`, `--skip-apt` e `--no-start`
 - registra e avvia il servizio
 
 Esempio non interattivo:
 
 ```bash
-sudo ./scripts/install.sh --ssid Pi-Setup --password 'ChangeMe123!' --port 80 --profile balanced
+sudo ./scripts/install.sh --ssid Pi-Setup --password 'ChangeMe123!' --portal-password 'CambiaQuestaPassword!' --port 80 --profile balanced
 ```
 
 ## 6. Configurazione iniziale
@@ -152,6 +154,8 @@ PORTAL_HOST=0.0.0.0
 PORTAL_PORT=80
 PORTAL_DEBUG=false
 PORTAL_TITLE=Raspberry Pi Wi-Fi Setup
+PORTAL_PASSWORD=password-di-accesso-al-portale
+PORTAL_SESSION_SECRET=chiave-sessione-generata
 WIFI_INTERFACE=wlan0
 HOTSPOT_INTERFACE=wlan0
 CLIENT_WIFI_INTERFACE=wlan0
@@ -320,7 +324,21 @@ Apri il browser e digita:
 http://192.168.4.1
 ```
 
-### 7.3 Configurazione di una rete WPA2/WPA3 Personal
+Il portale mostra prima la pagina di accesso. Inserisci la password `PORTAL_PASSWORD`.
+
+Se hai usato l'installazione guidata e hai lasciato vuota la password portale, lo script ne ha generata una automaticamente e l'ha stampata alla fine dell'installazione. La puoi ritrovare o cambiare in:
+
+```text
+/etc/raspberry-wifi-portal/portal.env
+```
+
+### 7.3 Scansione reti Wi-Fi
+
+Nella sezione `Reti visibili` premi `Scansiona`.
+
+Il Raspberry forza una nuova scansione sull'interfaccia `CLIENT_WIFI_INTERFACE` e aggiorna la lista senza ricaricare tutta la pagina. Toccando una rete rilevata, il campo `SSID` viene compilato automaticamente.
+
+### 7.4 Configurazione di una rete WPA2/WPA3 Personal
 
 Compila:
 
@@ -330,7 +348,7 @@ Compila:
 
 Poi premi `Salva e connetti`.
 
-### 7.4 Configurazione di una rete aziendale 802.1X
+### 7.5 Configurazione di una rete aziendale 802.1X
 
 Compila:
 
@@ -433,7 +451,7 @@ In questo modo il Raspberry aspetta piu' a lungo prima di rientrare in modalita'
 Per ambienti produttivi si consiglia:
 
 - una seconda chiavetta Wi-Fi USB se vuoi mantenere l'hotspot disponibile durante i tentativi di connessione
-- autenticazione aggiuntiva sul portale
+- password portale lunga e diversa dalla password dell'hotspot
 - upload sicuro dei certificati
 - backup del file `portal.env`
 
@@ -513,5 +531,7 @@ sudo ./scripts/install.sh --profile balanced
 - controlla `portal.env`
 - collega il telefono a `Pi-Setup`
 - apri `http://192.168.4.1`
+- accedi con la password portale
+- premi `Scansiona` per aggiornare le reti disponibili
 - inserisci i dati della rete finale
 - attendi il tentativo di connessione

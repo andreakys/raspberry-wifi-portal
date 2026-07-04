@@ -9,7 +9,12 @@
   <body>
     <main class="page-shell">
       <section class="hero-card">
-        <p class="eyebrow">Setup temporaneo</p>
+        <div class="topbar">
+          <p class="eyebrow">Setup temporaneo</p>
+          <form method="post" action="/logout">
+            <button type="submit" class="utility-button">Esci</button>
+          </form>
+        </div>
         <h1>{{ page_title }}</h1>
         <p class="lead">
           Collegati all'hotspot <strong>{{ hotspot_ssid }}</strong>, poi compila i dati della rete Wi-Fi definitiva.
@@ -151,12 +156,17 @@
         </article>
 
         <aside class="panel">
-          <div class="panel-header">
-            <h2>Reti visibili</h2>
-            <p>Scansione live dell'interfaccia Wi-Fi del Raspberry.</p>
+          <div class="panel-header panel-header-row">
+            <div>
+              <h2>Reti visibili</h2>
+              <p>Scansione live dell'interfaccia Wi-Fi del Raspberry.</p>
+            </div>
+            <button type="button" class="secondary-button" id="scan-networks-button">Scansiona</button>
           </div>
 
-          <div class="network-list">
+          <p class="scan-status muted" id="scan-status" role="status" aria-live="polite"></p>
+
+          <div class="network-list" id="network-list">
             {% for network in networks %}
             <button type="button" class="network-item" data-ssid="{{ network.ssid|e }}">
               <span>{{ network.ssid }}</span>
@@ -271,6 +281,9 @@
       const ssidField = document.getElementById("ssid-field");
       const ipMode = document.getElementById("ip-mode");
       const staticIpFields = document.getElementById("static-ip-fields");
+      const scanButton = document.getElementById("scan-networks-button");
+      const scanStatus = document.getElementById("scan-status");
+      const networkList = document.getElementById("network-list");
 
       function syncVisibility() {
         const mode = securityMode.value;
@@ -295,11 +308,66 @@
       ipMode.addEventListener("change", syncIpMode);
       syncIpMode();
 
-      document.querySelectorAll(".network-item").forEach((button) => {
-        button.addEventListener("click", () => {
-          ssidField.value = button.dataset.ssid;
+      function bindNetworkButtons() {
+        document.querySelectorAll(".network-item").forEach((button) => {
+          button.addEventListener("click", () => {
+            ssidField.value = button.dataset.ssid;
+          });
         });
-      });
+      }
+
+      function escapeHtml(value) {
+        return value
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function renderNetworks(networks) {
+        if (!networks.length) {
+          networkList.innerHTML = '<p class="muted">Nessuna rete rilevata al momento.</p>';
+          return;
+        }
+
+        networkList.innerHTML = networks.map((network) => {
+          const ssid = escapeHtml(network.ssid || "");
+          const security = escapeHtml(network.security || "Open");
+          const signal = escapeHtml(network.signal || "?");
+          return `
+            <button type="button" class="network-item" data-ssid="${ssid}">
+              <span>${ssid}</span>
+              <small>${security} - segnale ${signal}</small>
+            </button>
+          `;
+        }).join("");
+
+        bindNetworkButtons();
+      }
+
+      async function scanNetworks() {
+        scanButton.disabled = true;
+        scanStatus.textContent = "Scansione reti Wi-Fi in corso...";
+
+        try {
+          const response = await fetch("/api/networks", { credentials: "same-origin" });
+          if (!response.ok) {
+            throw new Error("scan-failed");
+          }
+          const data = await response.json();
+          renderNetworks(data.networks || []);
+          scanStatus.textContent = `Scansione completata: ${(data.networks || []).length} reti trovate.`;
+        } catch (error) {
+          scanStatus.textContent = "Scansione non riuscita. Riprova tra qualche secondo.";
+        } finally {
+          scanButton.disabled = false;
+        }
+      }
+
+      scanButton.addEventListener("click", scanNetworks);
+
+      bindNetworkButtons();
     </script>
   </body>
 </html>

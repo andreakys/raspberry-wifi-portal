@@ -36,6 +36,13 @@ body {
   width: min(760px, calc(100% - 32px));
 }
 
+.login-shell {
+  width: min(560px, calc(100% - 32px));
+  min-height: 100vh;
+  display: grid;
+  align-items: center;
+}
+
 .hero-card,
 .panel {
   background: var(--card);
@@ -48,6 +55,22 @@ body {
 .hero-card {
   padding: 32px;
   margin-bottom: 24px;
+}
+
+.login-card {
+  margin-bottom: 0;
+}
+
+.topbar,
+.panel-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.topbar form {
+  margin: 0;
 }
 
 .eyebrow {
@@ -173,6 +196,8 @@ select:focus {
 }
 
 .primary-button,
+.secondary-button,
+.utility-button,
 .network-item {
   border: 0;
   cursor: pointer;
@@ -188,6 +213,29 @@ select:focus {
 
 .primary-button:hover {
   filter: brightness(1.03);
+}
+
+.secondary-button,
+.utility-button {
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.secondary-button {
+  padding: 10px 14px;
+  white-space: nowrap;
+}
+
+.utility-button {
+  padding: 8px 12px;
+}
+
+.secondary-button:disabled {
+  cursor: wait;
+  opacity: 0.62;
 }
 
 .network-list {
@@ -212,6 +260,11 @@ select:focus {
 .network-item small,
 .muted {
   color: var(--muted);
+}
+
+.scan-status {
+  min-height: 1.35em;
+  margin: 14px 0 0;
 }
 
 .message {
@@ -306,5 +359,10 @@ select:focus {
   .page-shell {
     width: min(100% - 20px, 1120px);
     padding-top: 20px;
+  }
+
+  .panel-header-row {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

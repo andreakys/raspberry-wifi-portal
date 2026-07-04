@@ -12,6 +12,7 @@ START_SERVICE=true
 INTERACTIVE=false
 HOTSPOT_SSID_VALUE=""
 HOTSPOT_PASSWORD_VALUE=""
+PORTAL_PASSWORD_VALUE=""
 PORTAL_PORT_VALUE=""
 PROFILE_NAME=""
 
@@ -24,6 +25,7 @@ Opzioni:
   --interactive              Chiede SSID hotspot, password, porta e profilo recovery.
   --ssid VALUE               Imposta HOTSPOT_SSID.
   --password VALUE           Imposta HOTSPOT_PASSWORD (minimo 8 caratteri).
+  --portal-password VALUE    Imposta la password di accesso al portale web.
   --port VALUE               Imposta PORTAL_PORT.
   --profile NAME             Applica stable, balanced o unstable.
   --install-dir PATH         Installa in una cartella diversa da /opt/raspberry-wifi-portal.
@@ -33,7 +35,7 @@ Opzioni:
 
 Esempi:
   sudo ./scripts/install.sh --interactive
-  sudo ./scripts/install.sh --ssid Pi-Setup --password 'ChangeMe123!' --profile balanced
+  sudo ./scripts/install.sh --ssid Pi-Setup --password 'ChangeMe123!' --portal-password 'CambiaQuestaPassword!' --profile balanced
 EOF
 }
 
@@ -53,6 +55,21 @@ read_default() {
 
   read -r -p "${prompt} [${default_value}]: " answer
   printf '%s' "${answer:-${default_value}}"
+}
+
+generate_secret() {
+  python3 -c 'import secrets; print(secrets.token_urlsafe(18))' 2>/dev/null || openssl rand -hex 18
+}
+
+get_env_value() {
+  local key="$1"
+
+  [[ -f "${ENV_FILE}" ]] || return 0
+  awk -v key="${key}" '
+    index($0, key "=") == 1 {
+      print substr($0, length(key) + 2)
+    }
+  ' "${ENV_FILE}" | tail -n 1
 }
 
 set_env_value() {
@@ -163,6 +180,11 @@ while [[ $# -gt 0 ]]; do
       [[ -n "${HOTSPOT_PASSWORD_VALUE}" ]] || die "--password richiede un valore"
       shift 2
       ;;
+    --portal-password)
+      PORTAL_PASSWORD_VALUE="${2:-}"
+      [[ -n "${PORTAL_PASSWORD_VALUE}" ]] || die "--portal-password richiede un valore"
+      shift 2
+      ;;
     --port)
       PORTAL_PORT_VALUE="${2:-}"
       [[ -n "${PORTAL_PORT_VALUE}" ]] || die "--port richiede un valore"
@@ -204,12 +226,17 @@ fi
 if [[ "${INTERACTIVE}" == true ]]; then
   HOTSPOT_SSID_VALUE="${HOTSPOT_SSID_VALUE:-$(read_default 'SSID hotspot temporaneo' 'Pi-Setup')}"
   HOTSPOT_PASSWORD_VALUE="${HOTSPOT_PASSWORD_VALUE:-$(read_default 'Password hotspot temporaneo' 'ChangeMe123!')}"
+  PORTAL_PASSWORD_VALUE="${PORTAL_PASSWORD_VALUE:-$(read_default 'Password accesso portale (vuoto = genera sicura)' '')}"
   PORTAL_PORT_VALUE="${PORTAL_PORT_VALUE:-$(read_default 'Porta HTTP portale' '80')}"
   PROFILE_NAME="${PROFILE_NAME:-$(read_default 'Profilo recovery (stable/balanced/unstable)' 'balanced')}"
 fi
 
 if [[ -n "${HOTSPOT_PASSWORD_VALUE}" && ${#HOTSPOT_PASSWORD_VALUE} -lt 8 ]]; then
   die "La password hotspot deve contenere almeno 8 caratteri"
+fi
+
+if [[ -n "${PORTAL_PASSWORD_VALUE}" && ${#PORTAL_PASSWORD_VALUE} -lt 10 ]]; then
+  die "La password portale deve contenere almeno 10 caratteri"
 fi
 
 if [[ -n "${PORTAL_PORT_VALUE}" && ! "${PORTAL_PORT_VALUE}" =~ ^[0-9]+$ ]]; then
@@ -239,8 +266,21 @@ if [[ ! -f "${ENV_FILE}" ]]; then
   install -m 600 "${INSTALL_DIR}/deploy/portal.env.example" "${ENV_FILE}"
 fi
 
+GENERATED_PORTAL_PASSWORD=false
+existing_portal_password="$(get_env_value PORTAL_PASSWORD)"
+if [[ -z "${PORTAL_PASSWORD_VALUE}" && -z "${existing_portal_password}" ]]; then
+  PORTAL_PASSWORD_VALUE="$(generate_secret)"
+  GENERATED_PORTAL_PASSWORD=true
+fi
+
+existing_portal_session_secret="$(get_env_value PORTAL_SESSION_SECRET)"
+if [[ -z "${existing_portal_session_secret}" ]]; then
+  set_env_value "PORTAL_SESSION_SECRET" "$(generate_secret)"
+fi
+
 [[ -z "${HOTSPOT_SSID_VALUE}" ]] || set_env_value "HOTSPOT_SSID" "${HOTSPOT_SSID_VALUE}"
 [[ -z "${HOTSPOT_PASSWORD_VALUE}" ]] || set_env_value "HOTSPOT_PASSWORD" "${HOTSPOT_PASSWORD_VALUE}"
+[[ -z "${PORTAL_PASSWORD_VALUE}" ]] || set_env_value "PORTAL_PASSWORD" "${PORTAL_PASSWORD_VALUE}"
 [[ -z "${PORTAL_PORT_VALUE}" ]] || set_env_value "PORTAL_PORT" "${PORTAL_PORT_VALUE}"
 [[ -z "${PROFILE_NAME}" ]] || apply_profile "${PROFILE_NAME}"
 
@@ -258,11 +298,16 @@ fi
 
 portal_address="$(awk -F= '/^HOTSPOT_ADDRESS=/{print $2}' "${ENV_FILE}" | tail -n 1 | cut -d/ -f1)"
 hotspot_ssid="$(awk -F= '/^HOTSPOT_SSID=/{print $2}' "${ENV_FILE}" | tail -n 1)"
+portal_password="$(get_env_value PORTAL_PASSWORD)"
 
 echo
 echo "Installazione completata."
 echo "Hotspot: ${hotspot_ssid:-Pi-Setup}"
 echo "Portale: http://${portal_address:-192.168.4.1}"
+echo "Password portale: ${portal_password}"
+if [[ "${GENERATED_PORTAL_PASSWORD}" == true ]]; then
+  echo "Password generata automaticamente: conservala o cambiala in ${ENV_FILE}."
+fi
 echo "Configurazione: ${ENV_FILE}"
 echo
 echo "Comandi utili:"

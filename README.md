@@ -29,7 +29,7 @@ sudo ./scripts/install.sh --interactive
 Per un'installazione non interattiva:
 
 ```bash
-sudo ./scripts/install.sh --ssid Pi-Setup --password 'ChangeMe123!' --profile balanced
+sudo ./scripts/install.sh --ssid Pi-Setup --password 'ChangeMe123!' --portal-password 'CambiaQuestaPassword!' --profile balanced
 ```
 
 ### Bootstrap quasi one-line da GitHub
@@ -44,13 +44,17 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 
 1. collega il telefono a `Pi-Setup`
 2. apri `http://192.168.4.1`
-3. inserisci i dati della rete finale
-4. scegli un profilo recovery `stable`, `balanced` o `unstable` se necessario
+3. accedi con la password portale stampata dall'installer
+4. premi `Scansiona` per aggiornare le reti visibili
+5. inserisci o seleziona i dati della rete finale
+6. scegli un profilo recovery `stable`, `balanced` o `unstable` se necessario
 
 ## Funzioni principali
 
 - hotspot temporaneo per onboarding senza cavo Ethernet
 - portale web locale da smartphone o tablet
+- accesso protetto da password del portale
+- pulsante di scansione reti Wi-Fi disponibili
 - separazione opzionale tra interfaccia hotspot e interfaccia Wi-Fi client
 - supporto `WPA2/WPA3 Personal`
 - supporto base `802.1X` con `PEAP`, `TTLS`, `TLS`
@@ -95,6 +99,7 @@ raspberry-wifi-portal/
 |   `-- raspberry-wifi-portal.service
 |-- templates/
 |   |-- index.html
+|   |-- login.html
 |   `-- status.html
 `-- scripts/
     |-- apply_recovery_profile.sh
@@ -110,7 +115,7 @@ raspberry-wifi-portal/
   Avvia Flask, espone il form HTML e richiama il service layer per scansione Wi-Fi, hotspot e provisioning della rete.
 
 - `config.py`
-  Centralizza la configurazione da variabili d'ambiente: interfaccia Wi-Fi, SSID hotspot, password hotspot, porta HTTP e timeout.
+  Centralizza la configurazione da variabili d'ambiente: interfaccia Wi-Fi, SSID hotspot, password hotspot, password portale, porta HTTP e timeout.
 
 - `services/network_manager.py`
   Incapsula tutte le chiamate a `nmcli`:
@@ -124,6 +129,9 @@ raspberry-wifi-portal/
 
 - `templates/index.html`
   Pagina principale con form di configurazione.
+
+- `templates/login.html`
+  Pagina di accesso protetto prima delle impostazioni.
 
 - `templates/status.html`
   Pagina di esito dopo il tentativo di connessione.
@@ -141,7 +149,7 @@ raspberry-wifi-portal/
   - crea una virtual environment Python dedicata
   - crea `/etc/raspberry-wifi-portal/portal.env` se non esiste
   - permette installazione guidata con `--interactive`
-  - permette installazione non interattiva con `--ssid`, `--password`, `--port` e `--profile`
+  - permette installazione non interattiva con `--ssid`, `--password`, `--portal-password`, `--port` e `--profile`
   - installa la service unit
   - abilita il servizio
 
@@ -177,6 +185,8 @@ Lo smartphone si collega all'SSID `Pi-Setup`, poi apre:
 http://192.168.4.1
 ```
 
+Il portale richiede la password amministrativa `PORTAL_PASSWORD`. Se non viene indicata durante l'installazione, `install.sh` ne genera una sicura e la stampa a fine procedura.
+
 ### 3. Configurazione
 
 La pagina consente tre modalita':
@@ -190,6 +200,8 @@ Per `802.1X` supporta questi profili base:
 - `PEAP`
 - `TTLS`
 - `TLS`
+
+La sezione `Reti visibili` include il pulsante `Scansiona`, che forza una nuova scansione dell'interfaccia Wi-Fi client e aggiorna la lista senza ricaricare tutta la pagina.
 
 ### 4. Provisioning
 
@@ -206,6 +218,8 @@ Il backend crea una nuova connessione `NetworkManager`, restituisce subito una p
 | --- | --- | --- |
 | `PORTAL_HOST` | `0.0.0.0` | Host Flask |
 | `PORTAL_PORT` | `80` | Porta HTTP |
+| `PORTAL_PASSWORD` | generata dall'installer | Password di accesso al portale web |
+| `PORTAL_SESSION_SECRET` | generata dall'installer | Chiave server per firmare la sessione di login |
 | `WIFI_INTERFACE` | `wlan0` | Interfaccia Wi-Fi storica, usata come default per hotspot e client |
 | `HOTSPOT_INTERFACE` | valore di `WIFI_INTERFACE` | Interfaccia Wi-Fi dedicata all'hotspot temporaneo |
 | `CLIENT_WIFI_INTERFACE` | valore di `WIFI_INTERFACE` | Interfaccia Wi-Fi usata per scansione e connessione alla rete finale |
@@ -403,7 +417,7 @@ sudo ./scripts/install.sh --interactive
 Per una reinstallazione ripetibile puoi saltare le domande:
 
 ```bash
-sudo ./scripts/install.sh --ssid Pi-Setup --password 'ChangeMe123!' --port 80 --profile balanced
+sudo ./scripts/install.sh --ssid Pi-Setup --password 'ChangeMe123!' --portal-password 'CambiaQuestaPassword!' --port 80 --profile balanced
 ```
 
 ### 4. Personalizzare hotspot e porta dopo l'installazione
@@ -536,5 +550,5 @@ Per un impianto piu' robusto:
 - usare una chiavetta Wi-Fi USB per separare `hotspot` e `client` quando vuoi mantenere il portale sempre disponibile
 - integrare `dnsmasq` per captive portal automatico
 - memorizzare i certificati `802.1X` tramite upload sicuro
-- aggiungere autenticazione amministrativa alla pagina
+- aggiungere gestione utenti o cambio password direttamente dalla pagina
 - esporre un pulsante fisico GPIO per riaprire il portale di setup

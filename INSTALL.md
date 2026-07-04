@@ -20,6 +20,7 @@ Lo script chiede:
 
 - SSID dell'hotspot temporaneo
 - password dell'hotspot temporaneo
+- password di accesso al portale, oppure la genera automaticamente se lasci vuoto
 - porta HTTP del portale
 - profilo recovery: `stable`, `balanced` o `unstable`
 
@@ -37,6 +38,7 @@ Utile per reinstallazioni o provisioning ripetibili:
 sudo ./scripts/install.sh \
   --ssid Pi-Setup \
   --password 'ChangeMe123!' \
+  --portal-password 'CambiaQuestaPassword!' \
   --profile balanced
 ```
 
@@ -45,6 +47,8 @@ Opzioni utili:
 ```text
 --ssid VALUE        Imposta l'SSID dell'hotspot temporaneo
 --password VALUE    Imposta la password dell'hotspot temporaneo
+--portal-password VALUE
+                    Imposta la password di accesso al portale web
 --port VALUE        Imposta la porta HTTP del portale
 --profile NAME      Applica stable, balanced o unstable
 --skip-apt          Salta installazione pacchetti apt
@@ -59,10 +63,10 @@ Dopo aver pubblicato il repository:
 curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/andreakys/raspberry-wifi-portal.git main --profile balanced
 ```
 
-Puoi aggiungere anche SSID e password:
+Puoi aggiungere anche SSID, password hotspot e password portale:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/andreakys/raspberry-wifi-portal.git main --ssid Pi-Setup --password 'ChangeMe123!' --profile balanced
+curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/andreakys/raspberry-wifi-portal.git main --ssid Pi-Setup --password 'ChangeMe123!' --portal-password 'CambiaQuestaPassword!' --profile balanced
 ```
 
 ## Aggiornamento

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import time
+from hmac import compare_digest
 from threading import Lock, Thread
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 
 from config import load_config
 from services.network_manager import (
@@ -16,6 +17,8 @@ from services.network_manager import (
 config = load_config()
 network_manager = NetworkManagerService(config)
 app = Flask(__name__)
+app.secret_key = config.portal_session_secret
+app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
 provisioning_state = {
     "state": "idle",
     "message": "Nessuna configurazione in corso.",
@@ -38,6 +41,31 @@ recovery_runtime = {
     "disconnected_since": None,
     "last_client_seen_at": None,
 }
+
+
+def _is_authenticated() -> bool:
+    return bool(session.get("authenticated"))
+
+
+def _safe_next(default: str = "/") -> str:
+    target = request.values.get("next", default)
+    if not target.startswith("/") or target.startswith("//"):
+        return default
+    return target
+
+
+@app.before_request
+def require_portal_login():
+    if request.endpoint in {"login", "login_submit", "static"}:
+        return None
+
+    if _is_authenticated():
+        return None
+
+    if request.path.startswith("/api/"):
+        return jsonify({"ok": False, "error": "login-required"}), 401
+
+    return redirect(url_for("login", next=request.full_path if request.query_string else request.path))
 
 
 def _set_recovery_state(**updates: object) -> None:
@@ -255,6 +283,46 @@ def _start_background_threads() -> None:
     if config.auto_recovery_enabled:
         monitor = Thread(target=_run_recovery_monitor, daemon=True)
         monitor.start()
+
+
+@app.get("/login")
+def login():
+    if _is_authenticated():
+        return redirect(_safe_next())
+
+    return render_template(
+        "login.html",
+        page_title=config.portal_title,
+        hotspot_ssid=config.hotspot_ssid,
+        error_message=None,
+        next_url=_safe_next(),
+    )
+
+
+@app.post("/login")
+def login_submit():
+    submitted_password = request.form.get("portal_password", "")
+    if compare_digest(submitted_password, config.portal_password):
+        session.clear()
+        session["authenticated"] = True
+        return redirect(_safe_next())
+
+    return (
+        render_template(
+            "login.html",
+            page_title=config.portal_title,
+            hotspot_ssid=config.hotspot_ssid,
+            error_message="Password portale non valida.",
+            next_url=_safe_next(),
+        ),
+        401,
+    )
+
+
+@app.post("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
 
 
 @app.get("/")

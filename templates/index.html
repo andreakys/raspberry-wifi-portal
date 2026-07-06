@@ -51,6 +51,45 @@
         </div>
       </section>
 
+      <section class="panel quick-access-panel">
+        <div class="panel-header">
+          <h2>Accesso rapido telefono</h2>
+          <p>QR Wi-Fi per entrare nell'hotspot e QR portale per aprire la configurazione.</p>
+        </div>
+
+        <div class="qr-grid">
+          <article class="qr-item">
+            <div class="qr-box">
+              {% if quick_access.wifi_qr_svg %}
+              {{ quick_access.wifi_qr_svg|safe }}
+              {% else %}
+              <span class="muted">QR non disponibile</span>
+              {% endif %}
+            </div>
+            <div>
+              <span class="label">1. Hotspot</span>
+              <strong>{{ hotspot_ssid }}</strong>
+              <small>Contiene anche la password dell'hotspot temporaneo.</small>
+            </div>
+          </article>
+
+          <article class="qr-item">
+            <div class="qr-box">
+              {% if quick_access.portal_qr_svg %}
+              {{ quick_access.portal_qr_svg|safe }}
+              {% else %}
+              <span class="muted">QR non disponibile</span>
+              {% endif %}
+            </div>
+            <div>
+              <span class="label">2. Portale</span>
+              <strong>{{ quick_access.portal_url }}</strong>
+              <small>Apri il portale dopo il collegamento a {{ hotspot_ssid }}.</small>
+            </div>
+          </article>
+        </div>
+      </section>
+
       <section class="content-grid">
         <article class="panel">
           <div class="panel-header">

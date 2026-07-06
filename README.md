@@ -54,6 +54,7 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 - hotspot temporaneo per onboarding senza cavo Ethernet
 - portale web locale da smartphone o tablet
 - accesso protetto da password del portale
+- QR dinamici per collegare il telefono all'hotspot e aprire il portale
 - pulsante di scansione reti Wi-Fi disponibili
 - separazione opzionale tra interfaccia hotspot e interfaccia Wi-Fi client
 - supporto `WPA2/WPA3 Personal`
@@ -128,7 +129,7 @@ raspberry-wifi-portal/
   - verifica stato e connettivita'
 
 - `templates/index.html`
-  Pagina principale con form di configurazione.
+  Pagina principale con form di configurazione, QR di accesso rapido e scansione reti.
 
 - `templates/login.html`
   Pagina di accesso protetto prima delle impostazioni.
@@ -186,6 +187,13 @@ http://192.168.4.1
 ```
 
 Il portale richiede la password amministrativa `PORTAL_PASSWORD`. Se non viene indicata durante l'installazione, `install.sh` ne genera una sicura e la stampa a fine procedura.
+
+Dopo il login, la sezione `Accesso rapido telefono` mostra due QR dinamici:
+
+- QR Wi-Fi: collega un telefono all'hotspot temporaneo usando SSID e password correnti
+- QR portale: apre `http://192.168.4.1` o l'indirizzo configurato in `HOTSPOT_ADDRESS`
+
+Il QR Wi-Fi contiene la password dell'hotspot temporaneo, quindi viene mostrato solo dentro il portale protetto.
 
 ### 3. Configurazione
 

@@ -2,8 +2,8 @@
 
 ## Raspberry Pi Wi-Fi Setup Portal
 
-Versione documento: 1.7
-Data: 4 luglio 2026
+Versione documento: 1.8
+Data: 6 luglio 2026
 
 ## 1. Scopo
 
@@ -15,6 +15,7 @@ Il sistema crea un hotspot temporaneo chiamato `Pi-Setup` quando il Raspberry no
 
 - hotspot temporaneo per il primo accesso
 - pagina web locale protetta da password per la configurazione
+- QR dinamici per collegare il telefono all'hotspot e aprire il portale
 - scansione manuale delle reti Wi-Fi disponibili dal portale
 - separazione opzionale tra hotspot e Wi-Fi client con due interfacce
 - supporto reti Open
@@ -332,13 +333,29 @@ Se hai usato l'installazione guidata e hai lasciato vuota la password portale, l
 /etc/raspberry-wifi-portal/portal.env
 ```
 
-### 7.3 Scansione reti Wi-Fi
+### 7.3 Accesso rapido con QR
+
+Dopo il login, la sezione `Accesso rapido telefono` mostra due QR:
+
+- QR `Hotspot`: collega un telefono all'hotspot temporaneo usando SSID e password correnti.
+- QR `Portale`: apre direttamente l'indirizzo locale del portale, ad esempio `http://192.168.4.1`.
+
+Il QR hotspot contiene la password dell'hotspot temporaneo. Per questo viene mostrato solo nel portale protetto da login.
+
+Flusso consigliato:
+
+1. Scansiona il QR `Hotspot` con la fotocamera del telefono.
+2. Conferma il collegamento alla rete temporanea.
+3. Scansiona il QR `Portale` oppure apri manualmente l'indirizzo mostrato.
+4. Inserisci la password portale e configura la rete finale.
+
+### 7.4 Scansione reti Wi-Fi
 
 Nella sezione `Reti visibili` premi `Scansiona`.
 
 Il Raspberry forza una nuova scansione sull'interfaccia `CLIENT_WIFI_INTERFACE` e aggiorna la lista senza ricaricare tutta la pagina. Toccando una rete rilevata, il campo `SSID` viene compilato automaticamente.
 
-### 7.4 Configurazione di una rete WPA2/WPA3 Personal
+### 7.5 Configurazione di una rete WPA2/WPA3 Personal
 
 Compila:
 
@@ -348,7 +365,7 @@ Compila:
 
 Poi premi `Salva e connetti`.
 
-### 7.5 Configurazione di una rete aziendale 802.1X
+### 7.6 Configurazione di una rete aziendale 802.1X
 
 Compila:
 
@@ -532,6 +549,7 @@ sudo ./scripts/install.sh --profile balanced
 - collega il telefono a `Pi-Setup`
 - apri `http://192.168.4.1`
 - accedi con la password portale
+- usa i QR rapidi se devi collegare altri telefoni al setup
 - premi `Scansiona` per aggiornare le reti disponibili
 - inserisci i dati della rete finale
 - attendi il tentativo di connessione

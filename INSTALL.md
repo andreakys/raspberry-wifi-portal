@@ -30,6 +30,8 @@ Alla fine collegati all'hotspot configurato e apri:
 http://192.168.4.1
 ```
 
+Dopo il login il portale mostra anche due QR: uno per collegare rapidamente altri telefoni all'hotspot temporaneo e uno per aprire direttamente la pagina di configurazione.
+
 ## Installazione non interattiva
 
 Utile per reinstallazioni o provisioning ripetibili:

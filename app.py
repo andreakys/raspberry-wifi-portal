@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import time
 from hmac import compare_digest
 from threading import Lock, Thread
@@ -41,6 +42,49 @@ recovery_runtime = {
     "disconnected_since": None,
     "last_client_seen_at": None,
 }
+
+
+def _escape_wifi_qr(value: str) -> str:
+    return (
+        value.replace("\\", "\\\\")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+        .replace(":", "\\:")
+        .replace('"', '\\"')
+    )
+
+
+def _make_qr_svg(payload: str) -> str:
+    try:
+        import qrcode
+        from qrcode.image.svg import SvgPathImage
+    except ImportError:
+        return ""
+
+    qr = qrcode.QRCode(border=2, box_size=8)
+    qr.add_data(payload)
+    qr.make(fit=True)
+    image = qr.make_image(image_factory=SvgPathImage)
+    stream = io.BytesIO()
+    image.save(stream)
+    svg = stream.getvalue().decode("utf-8")
+    return svg[svg.find("<svg") :] if "<svg" in svg else svg
+
+
+def _quick_access(status: dict[str, object]) -> dict[str, str]:
+    portal_url = f"http://{status['portal_address']}"
+    ssid = _escape_wifi_qr(config.hotspot_ssid)
+    password = _escape_wifi_qr(config.hotspot_password)
+    if config.hotspot_password:
+        wifi_payload = f"WIFI:T:WPA;S:{ssid};P:{password};H:false;;"
+    else:
+        wifi_payload = f"WIFI:T:nopass;S:{ssid};H:false;;"
+
+    return {
+        "portal_url": portal_url,
+        "wifi_qr_svg": _make_qr_svg(wifi_payload),
+        "portal_qr_svg": _make_qr_svg(portal_url),
+    }
 
 
 def _is_authenticated() -> bool:
@@ -113,6 +157,7 @@ def _render_index(
             portal_address=status["portal_address"],
             status=status,
             networks=networks,
+            quick_access=_quick_access(status),
             error_message=error_message,
             network_message=network_message,
             network_error=network_error,

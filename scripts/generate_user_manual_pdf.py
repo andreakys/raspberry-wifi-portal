@@ -27,8 +27,8 @@ TMP_DIR = ROOT / "tmp" / "pdfs"
 OUTPUT_PDF = OUTPUT_DIR / "manuale-utente-raspberry-wifi-portal.pdf"
 DOCS_PDF = ROOT / "docs" / "manuale-utente-raspberry-wifi-portal.pdf"
 CODE_WRAP_WIDTH = 88
-DOCUMENT_VERSION = "1.7"
-DOCUMENT_DATE = "4 luglio 2026"
+DOCUMENT_VERSION = "1.8"
+DOCUMENT_DATE = "6 luglio 2026"
 
 
 def build_styles():
@@ -263,6 +263,19 @@ def ip_management_diagram() -> Drawing:
     )
 
 
+def quick_access_diagram() -> Drawing:
+    return workflow_diagram(
+        "Accesso rapido - senza app nativa",
+        [
+            ("QR Wi-Fi", "entra hotspot", "#ffffff"),
+            ("QR Portale", "apri pagina", "#e8f1fb"),
+            ("Login", "password", "#fff7ed"),
+            ("Setup", "configura rete", "#eaf7ef"),
+        ],
+        "I QR sono generati dal portale con SSID, password hotspot e indirizzo correnti.",
+    )
+
+
 def troubleshooting_diagram() -> Drawing:
     return workflow_diagram(
         "Risoluzione problemi - ordine consigliato",
@@ -411,6 +424,10 @@ def build_story():
             if line.startswith("### 6.7 "):
                 story.append(Spacer(1, 0.08 * cm))
                 story.append(ip_management_diagram())
+                story.append(Spacer(1, 0.18 * cm))
+            if line.startswith("### 7.3 "):
+                story.append(Spacer(1, 0.08 * cm))
+                story.append(quick_access_diagram())
                 story.append(Spacer(1, 0.18 * cm))
             continue
 

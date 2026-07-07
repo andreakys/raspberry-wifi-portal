@@ -1,5 +1,5 @@
 [Unit]
-Description=Raspberry Pi Wi-Fi Setup Portal
+Description=Pi Network Manager Portal
 Wants=NetworkManager.service network-online.target
 After=NetworkManager.service network-online.target
 

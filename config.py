@@ -3,8 +3,8 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-APP_VERSION = "1.11.0"
-DEFAULT_PORTAL_TITLE = "Wi-Fi Setup"
+APP_VERSION = "1.12.0"
+DEFAULT_PORTAL_TITLE = "Pi Network Manager"
 
 
 def _bool_from_env(name: str, default: bool = False) -> bool:

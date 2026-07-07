@@ -73,6 +73,14 @@ body {
   margin: 0;
 }
 
+.topbar-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
 .version-badge {
   display: inline-flex;
   align-items: center;
@@ -122,7 +130,7 @@ h2 {
 }
 
 .access-panel {
-  margin-bottom: 24px;
+  margin-top: 24px;
 }
 
 .panel-header p {
@@ -262,6 +270,16 @@ select:focus {
 
 .utility-button {
   padding: 8px 12px;
+}
+
+.danger-button {
+  color: #8a1f1f;
+  border-color: rgba(165, 35, 35, 0.28);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.danger-button:hover {
+  background: rgba(222, 84, 84, 0.12);
 }
 
 .secondary-button:disabled {

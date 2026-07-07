@@ -27,7 +27,7 @@ TMP_DIR = ROOT / "tmp" / "pdfs"
 OUTPUT_PDF = OUTPUT_DIR / "manuale-utente-raspberry-wifi-portal.pdf"
 DOCS_PDF = ROOT / "docs" / "manuale-utente-raspberry-wifi-portal.pdf"
 CODE_WRAP_WIDTH = 88
-DOCUMENT_VERSION = "1.11.0"
+DOCUMENT_VERSION = "1.12.0"
 DOCUMENT_DATE = "7 luglio 2026"
 
 
@@ -333,7 +333,7 @@ def build_story():
 
     story.append(Spacer(1, 2.2 * cm))
     story.append(Paragraph("Manuale Utente", styles["TitlePage"]))
-    story.append(Paragraph("Wi-Fi Setup", styles["TitlePage"]))
+    story.append(Paragraph("Pi Network Manager", styles["TitlePage"]))
     story.append(Spacer(1, 0.4 * cm))
     story.append(
         Paragraph(
@@ -448,7 +448,7 @@ def add_page_number(canvas, doc):
     canvas.saveState()
     canvas.setFont("Helvetica", 8.5)
     canvas.setFillColor(colors.HexColor("#475569"))
-    canvas.drawString(doc.leftMargin, 1.2 * cm, "Wi-Fi Setup")
+    canvas.drawString(doc.leftMargin, 1.2 * cm, "Pi Network Manager")
     canvas.drawRightString(A4[0] - doc.rightMargin, 1.2 * cm, f"Pagina {doc.page}")
     canvas.restoreState()
 
@@ -464,7 +464,7 @@ def main():
         leftMargin=1.8 * cm,
         topMargin=1.7 * cm,
         bottomMargin=1.8 * cm,
-        title="Manuale Utente - Wi-Fi Setup",
+        title="Manuale Utente - Pi Network Manager",
         author="OpenAI Codex",
     )
     story = build_story()

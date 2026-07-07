@@ -4,6 +4,7 @@ import ipaddress
 import re
 import subprocess
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from config import PortalConfig
@@ -118,6 +119,7 @@ class NetworkManagerService:
             "wifi_interface_names": [item["name"] for item in wifi_interfaces],
             "wifi_interface_count": len(wifi_interfaces),
             "has_separate_wifi_interfaces": self.config.hotspot_interface != self.config.client_wifi_interface,
+            "board_temperature": self.board_temperature(),
             "connectivity": self.connectivity(),
             "device_state": self.device_state(),
             "active_connection": self.active_connection_name(),
@@ -140,6 +142,19 @@ class NetworkManagerService:
             if self._is_wifi_connection_type(connection_type) and name != self.config.hotspot_connection_name:
                 return True
         return False
+
+    def board_temperature(self) -> dict[str, Any]:
+        celsius = self._read_board_temperature_celsius()
+        return {
+            "celsius": celsius,
+            "display": f"{celsius:.1f} C" if celsius is not None else "n/d",
+        }
+
+    def reboot_system(self) -> None:
+        try:
+            subprocess.Popen(["systemctl", "reboot"])
+        except OSError as error:
+            raise NetworkManagerError(f"Riavvio non riuscito: {error}") from error
 
     def list_ip_interfaces(self) -> list[dict[str, Any]]:
         result = self._run_nmcli("-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device", "status")
@@ -195,6 +210,14 @@ class NetworkManagerService:
 
     def _wifi_interfaces(self, interfaces: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return [item for item in interfaces if item.get("type") == "wifi"]
+
+    def _read_board_temperature_celsius(self) -> float | None:
+        thermal_path = Path("/sys/class/thermal/thermal_zone0/temp")
+        try:
+            raw_value = thermal_path.read_text(encoding="utf-8").strip()
+            return int(raw_value) / 1000
+        except (OSError, ValueError):
+            return None
 
     def configure_interface_ipv4(self, payload: dict[str, str]) -> str:
         interface = payload.get("interface", "").strip()

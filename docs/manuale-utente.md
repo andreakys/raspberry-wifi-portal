@@ -1,13 +1,13 @@
 # Manuale Utente
 
-## Wi-Fi Setup
+## Pi Network Manager
 
-Versione documento: 1.11.0
+Versione documento: 1.12.0
 Data: 7 luglio 2026
 
 ## 1. Scopo
 
-Questo manuale descrive come installare, configurare e utilizzare il portale Wi-Fi per Raspberry Pi 5.
+Questo manuale descrive come installare, configurare e utilizzare il portale di gestione rete per Raspberry Pi 5.
 
 Il sistema crea un hotspot temporaneo chiamato `Pi-Setup` quando il Raspberry non e' ancora collegato alla rete finale. Da smartphone o tablet e' possibile aprire una pagina web locale, inserire i dati della rete aziendale e lasciare che il Raspberry provi automaticamente la connessione.
 
@@ -16,6 +16,8 @@ Il sistema crea un hotspot temporaneo chiamato `Pi-Setup` quando il Raspberry no
 - hotspot temporaneo per il primo accesso
 - pagina web locale protetta da password per la configurazione
 - versione applicazione visibile per verificare gli aggiornamenti installati
+- temperatura scheda visibile nella dashboard
+- pulsante di riavvio protetto da login
 - scheda accesso stampabile o salvabile in PDF dal browser
 - scansione manuale delle reti Wi-Fi disponibili dal portale
 - scansione completa con riavvio temporaneo hotspot quando si usa una sola radio Wi-Fi
@@ -156,7 +158,7 @@ Esempio:
 PORTAL_HOST=0.0.0.0
 PORTAL_PORT=80
 PORTAL_DEBUG=false
-PORTAL_TITLE=Wi-Fi Setup
+PORTAL_TITLE=Pi Network Manager
 APP_VERSION=
 PORTAL_PASSWORD=password-di-accesso-al-portale
 PORTAL_SESSION_SECRET=chiave-sessione-generata
@@ -358,7 +360,15 @@ Flusso consigliato:
 3. Stampa la pagina oppure scegli `Salva come PDF` nel browser.
 4. Usa la scheda per collegarti all'hotspot e aprire il portale.
 
-### 7.4 Scansione reti Wi-Fi
+La scheda accesso si trova in fondo alla pagina principale, dopo le sezioni di configurazione rete e indirizzi IP.
+
+### 7.4 Temperatura e riavvio
+
+Nella parte alta del portale viene mostrata la `Temperatura scheda`, letta dal sensore termico del Raspberry. Se il dato non e' disponibile, viene mostrato `n/d`.
+
+Il pulsante `Riavvia` esegue un reboot del Raspberry tramite `systemctl reboot`. Il comando e' disponibile solo dopo il login e richiede conferma nel browser.
+
+### 7.5 Scansione reti Wi-Fi
 
 Nella sezione `Reti visibili` premi `Scansiona`.
 
@@ -368,7 +378,7 @@ Se `HOTSPOT_INTERFACE` e `CLIENT_WIFI_INTERFACE` sono la stessa radio, per esemp
 
 Se accedi al portale da un PC collegato via cavo LAN e la LAN e' presente, il pulsante `Scansiona` puo' fare direttamente una scansione completa: il portale spegne l'hotspot per pochi secondi, cerca le reti e aggiorna la lista restando raggiungibile tramite LAN.
 
-Nota versione: dalla versione `1.11.0` il portale riconosce anche le installazioni in cui `nmcli` indica le connessioni Wi-Fi come `802-11-wireless`, mostra quante interfacce Wi-Fi sono rilevate e distingue la scansione da LAN cablata.
+Nota versione: dalla versione `1.12.0` il portale riconosce anche le installazioni in cui `nmcli` indica le connessioni Wi-Fi come `802-11-wireless`, mostra quante interfacce Wi-Fi sono rilevate, distingue la scansione da LAN cablata e mostra temperatura/riavvio.
 
 Quando premi `Scansione completa`:
 
@@ -382,7 +392,7 @@ Con due interfacce Wi-Fi, ad esempio hotspot su `wlan0` e client su `wlan1`, non
 
 Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` nella parte alta del portale. Se mostra `2` e nomi come `wlan0, wlan1`, il Raspberry vede anche il dongle USB. In quel caso puoi configurare `HOTSPOT_INTERFACE=wlan0` e `CLIENT_WIFI_INTERFACE=wlan1` in `/etc/raspberry-wifi-portal/portal.env`.
 
-### 7.5 Configurazione di una rete WPA2/WPA3 Personal
+### 7.6 Configurazione di una rete WPA2/WPA3 Personal
 
 Compila:
 
@@ -392,7 +402,7 @@ Compila:
 
 Poi premi `Salva e connetti`.
 
-### 7.6 Configurazione di una rete aziendale 802.1X
+### 7.7 Configurazione di una rete aziendale 802.1X
 
 Compila:
 
@@ -509,7 +519,7 @@ Per aggiornare l'applicazione:
 4. riesegui `sudo ./scripts/install.sh --profile balanced`
 
 Il file `/etc/raspberry-wifi-portal/portal.env` viene mantenuto.
-Se il titolo e' ancora il vecchio default `Raspberry Pi Wi-Fi Setup`, l'installer lo aggiorna automaticamente a `Wi-Fi Setup`. I titoli personalizzati non vengono sovrascritti.
+Se il titolo e' ancora un vecchio default, come `Raspberry Pi Wi-Fi Setup` o `Wi-Fi Setup`, l'installer lo aggiorna automaticamente a `Pi Network Manager`. I titoli personalizzati non vengono sovrascritti.
 
 Se dopo l'aggiornamento l'interfaccia sembra vecchia:
 
@@ -523,9 +533,11 @@ Verifica nel portale la presenza di:
 
 - badge `Versione`
 - pulsante `Scansiona`
+- pulsante `Riavvia`
 - tasto `Esci`
+- riquadro `Temperatura scheda`
 - riquadro `Interfacce Wi-Fi`
-- sezione `Scheda accesso`
+- sezione `Scheda accesso` in fondo alla pagina
 
 ## 12. Pubblicazione su GitHub
 

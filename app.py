@@ -473,6 +473,27 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.post("/system/reboot")
+def reboot_system():
+    try:
+        network_manager.reboot_system()
+    except NetworkManagerError as error:
+        return _render_index(network_error=str(error), status_code=500)
+
+    return render_template(
+        "status.html",
+        page_title=config.portal_title,
+        app_version=config.app_version,
+        success=True,
+        pending=False,
+        status_eyebrow="Sistema",
+        status_title="Riavvio in corso",
+        message="Il Raspberry sta eseguendo il riavvio. Attendi circa un minuto prima di ricollegarti al portale.",
+        connection_name="Sistema",
+        connectivity="reboot",
+    )
+
+
 @app.get("/")
 def index():
     return _render_index()

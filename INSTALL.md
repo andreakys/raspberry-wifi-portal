@@ -82,7 +82,7 @@ sudo ./scripts/install.sh --profile balanced
 ```
 
 Il file `/etc/raspberry-wifi-portal/portal.env` viene conservato. Le opzioni passate allo script aggiornano solo i valori corrispondenti.
-Se il file contiene ancora il vecchio titolo di default `Raspberry Pi Wi-Fi Setup`, l'installer lo migra a `Wi-Fi Setup`.
+Se il file contiene ancora un vecchio titolo di default, come `Raspberry Pi Wi-Fi Setup` o `Wi-Fi Setup`, l'installer lo migra a `Pi Network Manager`.
 
 Se l'interfaccia non cambia dopo un aggiornamento:
 

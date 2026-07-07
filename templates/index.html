@@ -11,16 +11,21 @@
       <section class="hero-card">
         <div class="topbar">
           <div>
-            <p class="eyebrow">Setup temporaneo</p>
+            <p class="eyebrow">Gestione rete</p>
             <span class="version-badge">Versione {{ app_version }}</span>
           </div>
-          <form method="post" action="/logout">
-            <button type="submit" class="utility-button">Esci</button>
-          </form>
+          <div class="topbar-actions">
+            <form method="post" action="/system/reboot" onsubmit="return confirm('Riavviare il Raspberry adesso? Il portale non sara disponibile per circa un minuto.');">
+              <button type="submit" class="utility-button danger-button">Riavvia</button>
+            </form>
+            <form method="post" action="/logout">
+              <button type="submit" class="utility-button">Esci</button>
+            </form>
+          </div>
         </div>
         <h1>{{ page_title }}</h1>
         <p class="lead">
-          Collegati all'hotspot <strong>{{ hotspot_ssid }}</strong>, poi compila i dati della rete Wi-Fi definitiva.
+          Gestisci hotspot, Wi-Fi client, LAN cablata e indirizzi IP dal portale locale del Raspberry.
         </p>
         <div class="status-grid">
           <article>
@@ -53,6 +58,10 @@
             <strong>{{ status.connectivity }}</strong>
           </article>
           <article>
+            <span class="label">Temperatura scheda</span>
+            <strong>{{ status.board_temperature.display }}</strong>
+          </article>
+          <article>
             <span class="label">Portale</span>
             <strong>{{ portal_address }}</strong>
           </article>
@@ -60,16 +69,6 @@
             <span class="label">Versione</span>
             <strong>{{ app_version }}</strong>
           </article>
-        </div>
-      </section>
-
-      <section class="panel access-panel">
-        <div class="panel-header panel-header-row">
-          <div>
-            <h2>Scheda accesso</h2>
-            <p>Pagina stampabile con SSID hotspot, password, indirizzo portale e password di accesso.</p>
-          </div>
-          <a class="secondary-button button-link" href="/access-sheet" target="_blank" rel="noopener">Stampa/PDF</a>
         </div>
       </section>
 
@@ -317,6 +316,16 @@
           <button type="submit" class="primary-button">Applica rete</button>
         </form>
       </section>
+
+      <section class="panel access-panel">
+        <div class="panel-header panel-header-row">
+          <div>
+            <h2>Scheda accesso</h2>
+            <p>Pagina stampabile con SSID hotspot, password, indirizzo portale e password di accesso.</p>
+          </div>
+          <a class="secondary-button button-link" href="/access-sheet" target="_blank" rel="noopener">Stampa/PDF</a>
+        </div>
+      </section>
     </main>
 
     <script>
@@ -397,7 +406,7 @@
 
       async function scanNetworks() {
         scanButton.disabled = true;
-          scanStatus.textContent = "Scansione reti Wi-Fi in corso...";
+        scanStatus.textContent = "Scansione reti Wi-Fi in corso...";
 
         try {
           const response = await fetch("/api/networks", { credentials: "same-origin" });

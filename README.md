@@ -1,6 +1,6 @@
-# Wi-Fi Setup
+# Pi Network Manager
 
-Portale per Raspberry Pi 5 che espone un hotspot temporaneo con pagina web locale per configurare il collegamento Wi-Fi del dispositivo, inclusi i casi base `WPA2/WPA3 Personal` e `802.1X`.
+Portale per Raspberry Pi 5 che espone un hotspot temporaneo con pagina web locale per configurare Wi-Fi, LAN cablata, indirizzi IP e stato rete del dispositivo, inclusi i casi base `WPA2/WPA3 Personal` e `802.1X`.
 
 ## Documentazione
 
@@ -56,6 +56,8 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 - portale web locale da smartphone o tablet
 - accesso protetto da password del portale
 - numero versione visibile in login, dashboard e API status
+- temperatura scheda visibile nella dashboard
+- pulsante di riavvio protetto da login
 - scheda accesso stampabile o salvabile in PDF dal browser
 - pulsante di scansione reti Wi-Fi disponibili
 - scansione completa con riavvio temporaneo hotspot quando esiste una sola radio Wi-Fi
@@ -102,6 +104,7 @@ raspberry-wifi-portal/
 |-- systemd/
 |   `-- raspberry-wifi-portal.service
 |-- templates/
+|   |-- access_sheet.html
 |   |-- index.html
 |   |-- login.html
 |   `-- status.html
@@ -133,6 +136,9 @@ raspberry-wifi-portal/
 
 - `templates/index.html`
   Pagina principale con form di configurazione, scheda accesso stampabile e scansione reti.
+
+- `templates/access_sheet.html`
+  Pagina pulita per stampa o salvataggio PDF dei dati di accesso al portale.
 
 - `templates/login.html`
   Pagina di accesso protetto prima delle impostazioni.
@@ -201,6 +207,8 @@ Dopo il login, la sezione `Scheda accesso` permette di aprire una pagina stampab
 
 Da quella pagina puoi usare `Stampa/PDF` del browser per stampare la scheda o salvarla come PDF. La scheda contiene password operative, quindi va condivisa solo con persone autorizzate.
 
+La dashboard mostra anche la temperatura della scheda Raspberry letta da `/sys/class/thermal/thermal_zone0/temp`. Il pulsante `Riavvia` esegue un reboot del Raspberry tramite `systemctl reboot` ed e' disponibile solo dopo il login.
+
 ### 3. Configurazione
 
 La pagina consente tre modalita':
@@ -223,7 +231,7 @@ Se accedi dal PC tramite cavo LAN e la LAN e' presente, il pulsante `Scansiona` 
 
 Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` in alto: `1` indica solo la radio della scheda, `2` con nomi come `wlan0, wlan1` indica anche un dongle USB. Per separarle imposta `HOTSPOT_INTERFACE=wlan0` e `CLIENT_WIFI_INTERFACE=wlan1` in `/etc/raspberry-wifi-portal/portal.env`.
 
-Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.11.0`: questa release riconosce anche le installazioni in cui `NetworkManager` indica le connessioni Wi-Fi come `802-11-wireless`.
+Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.12.0`: questa release riconosce anche le installazioni in cui `NetworkManager` indica le connessioni Wi-Fi come `802-11-wireless` e aggiunge temperatura scheda e riavvio.
 
 ### 4. Provisioning
 
@@ -240,7 +248,7 @@ Il backend crea una nuova connessione `NetworkManager`, restituisce subito una p
 | --- | --- | --- |
 | `PORTAL_HOST` | `0.0.0.0` | Host Flask |
 | `PORTAL_PORT` | `80` | Porta HTTP |
-| `PORTAL_TITLE` | `Wi-Fi Setup` | Titolo mostrato nel portale |
+| `PORTAL_TITLE` | `Pi Network Manager` | Titolo mostrato nel portale |
 | `APP_VERSION` | versione del codice | Versione mostrata nel portale |
 | `PORTAL_PASSWORD` | generata dall'installer | Password di accesso al portale web |
 | `PORTAL_SESSION_SECRET` | generata dall'installer | Chiave server per firmare la sessione di login |
@@ -474,7 +482,7 @@ grep -E 'PORTAL_TITLE|APP_VERSION' /etc/raspberry-wifi-portal/portal.env
 sudo systemctl restart raspberry-wifi-portal.service
 ```
 
-Il portale aggiornato mostra un badge `Versione ...`, il pulsante `Scansiona`, il tasto `Esci`, il riquadro `Interfacce Wi-Fi` e la sezione `Scheda accesso`. Se non li vedi, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
+Il portale aggiornato mostra un badge `Versione ...`, il pulsante `Scansiona`, il tasto `Riavvia`, il tasto `Esci`, il riquadro `Temperatura scheda`, il riquadro `Interfacce Wi-Fi` e la sezione `Scheda accesso` in fondo alla pagina. Se non li vedi, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
 
 ## Aggiornamento
 
@@ -486,7 +494,7 @@ Per aggiornare:
 4. rilancia `sudo ./scripts/install.sh`
 
 Il file `/etc/raspberry-wifi-portal/portal.env` viene mantenuto.
-L'installer aggiorna automaticamente il vecchio titolo di default `Raspberry Pi Wi-Fi Setup` in `Wi-Fi Setup`; eventuali titoli personalizzati vengono lasciati invariati.
+L'installer aggiorna automaticamente i vecchi titoli di default `Raspberry Pi Wi-Fi Setup` e `Wi-Fi Setup` in `Pi Network Manager`; eventuali titoli personalizzati vengono lasciati invariati.
 
 ## Pubblicazione su GitHub
 

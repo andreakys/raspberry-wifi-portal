@@ -9,15 +9,19 @@
   <body>
     <main class="page-shell narrow">
       <section class="hero-card">
-        <p class="eyebrow">Esito configurazione</p>
+        <p class="eyebrow">{{ status_eyebrow or "Esito configurazione" }}</p>
         <span class="version-badge">Versione {{ app_version }}</span>
         <h1>
+          {% if status_title %}
+          {{ status_title }}
+          {% else %}
           {% if pending %}
           Cambio rete in corso
           {% elif success %}
           Connessione aggiornata
           {% else %}
           Configurazione non riuscita
+          {% endif %}
           {% endif %}
         </h1>
         <p class="lead">{{ message }}</p>

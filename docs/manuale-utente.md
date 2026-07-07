@@ -2,7 +2,7 @@
 
 ## Wi-Fi Setup
 
-Versione documento: 1.9
+Versione documento: 1.10
 Data: 7 luglio 2026
 
 ## 1. Scopo
@@ -18,6 +18,7 @@ Il sistema crea un hotspot temporaneo chiamato `Pi-Setup` quando il Raspberry no
 - versione applicazione visibile per verificare gli aggiornamenti installati
 - QR dinamici per collegare il telefono all'hotspot e aprire il portale
 - scansione manuale delle reti Wi-Fi disponibili dal portale
+- scansione completa con riavvio temporaneo hotspot quando si usa una sola radio Wi-Fi
 - separazione opzionale tra hotspot e Wi-Fi client con due interfacce
 - supporto reti Open
 - supporto reti WPA2/WPA3 Personal
@@ -358,6 +359,18 @@ Nella sezione `Reti visibili` premi `Scansiona`.
 
 Il Raspberry forza una nuova scansione sull'interfaccia `CLIENT_WIFI_INTERFACE` e aggiorna la lista senza ricaricare tutta la pagina. Toccando una rete rilevata, il campo `SSID` viene compilato automaticamente.
 
+Se `HOTSPOT_INTERFACE` e `CLIENT_WIFI_INTERFACE` sono la stessa radio, per esempio `wlan0`, la scansione live puo' vedere solo `Pi-Setup` mentre l'hotspot e' attivo. In questo caso il portale mostra anche `Scansione completa`.
+
+Quando premi `Scansione completa`:
+
+1. il portale avvia la scansione in background
+2. l'hotspot `Pi-Setup` viene spento per pochi secondi
+3. il Raspberry cerca le reti Wi-Fi vicine
+4. l'hotspot viene riattivato automaticamente
+5. devi ricollegarti a `Pi-Setup` e aggiornare la pagina
+
+Con due interfacce Wi-Fi, ad esempio hotspot su `wlan0` e client su `wlan1`, non serve spegnere l'hotspot: la scansione live usa direttamente la radio client.
+
 ### 7.5 Configurazione di una rete WPA2/WPA3 Personal
 
 Compila:
@@ -571,5 +584,6 @@ sudo ./scripts/install.sh --profile balanced
 - controlla il badge versione
 - usa i QR rapidi se devi collegare altri telefoni al setup
 - premi `Scansiona` per aggiornare le reti disponibili
+- se vedi solo `Pi-Setup` e hai una sola radio Wi-Fi, usa `Scansione completa`
 - inserisci i dati della rete finale
 - attendi il tentativo di connessione

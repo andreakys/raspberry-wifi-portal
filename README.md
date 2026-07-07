@@ -58,6 +58,7 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 - numero versione visibile in login, dashboard e API status
 - QR dinamici per collegare il telefono all'hotspot e aprire il portale
 - pulsante di scansione reti Wi-Fi disponibili
+- scansione completa con riavvio temporaneo hotspot quando esiste una sola radio Wi-Fi
 - separazione opzionale tra interfaccia hotspot e interfaccia Wi-Fi client
 - supporto `WPA2/WPA3 Personal`
 - supporto base `802.1X` con `PEAP`, `TTLS`, `TLS`
@@ -212,6 +213,8 @@ Per `802.1X` supporta questi profili base:
 - `TLS`
 
 La sezione `Reti visibili` include il pulsante `Scansiona`, che forza una nuova scansione dell'interfaccia Wi-Fi client e aggiorna la lista senza ricaricare tutta la pagina.
+
+Se hotspot e Wi-Fi client usano la stessa interfaccia, ad esempio `wlan0`, la scansione live puo' vedere solo l'hotspot `Pi-Setup` mentre la radio lavora in modalita' access point. In quel caso il portale mostra `Scansione completa`: spegne l'hotspot per pochi secondi, scansiona le reti vicine, riattiva `Pi-Setup` e conserva il risultato. Il telefono deve poi ricollegarsi all'hotspot e aggiornare la pagina.
 
 ### 4. Provisioning
 

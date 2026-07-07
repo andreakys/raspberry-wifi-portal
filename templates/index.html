@@ -210,6 +210,25 @@
             <button type="button" class="secondary-button" id="scan-networks-button">Scansiona</button>
           </div>
 
+          {% if scan_limited %}
+          <div class="message warning">
+            Hotspot e Wi-Fi client usano entrambi {{ status.client_wifi_interface }}. La scansione live puo'
+            vedere solo {{ hotspot_ssid }}. Per cercare le reti vicine spegniamo l'hotspot per pochi secondi.
+          </div>
+          <button type="button" class="secondary-button full-width-button" id="full-scan-button">
+            Scansione completa
+          </button>
+          {% endif %}
+
+          {% if full_scan.state in ["running", "completed", "error"] %}
+          <div class="message {% if full_scan.state == 'error' %}error{% else %}info{% endif %}">
+            {{ full_scan.message }}
+            {% if full_scan.state == "completed" %}
+            Riconnettiti a {{ hotspot_ssid }} e aggiorna la pagina se non vedi subito l'elenco.
+            {% endif %}
+          </div>
+          {% endif %}
+
           <p class="scan-status muted" id="scan-status" role="status" aria-live="polite"></p>
 
           <div class="network-list" id="network-list">
@@ -328,6 +347,7 @@
       const ipMode = document.getElementById("ip-mode");
       const staticIpFields = document.getElementById("static-ip-fields");
       const scanButton = document.getElementById("scan-networks-button");
+      const fullScanButton = document.getElementById("full-scan-button");
       const scanStatus = document.getElementById("scan-status");
       const networkList = document.getElementById("network-list");
 
@@ -412,6 +432,29 @@
       }
 
       scanButton.addEventListener("click", scanNetworks);
+
+      async function startFullScan() {
+        fullScanButton.disabled = true;
+        scanStatus.textContent = "Scansione completa avviata: il telefono perdera' Pi-Setup per alcuni secondi.";
+
+        try {
+          const response = await fetch("/api/networks/full-scan", {
+            method: "POST",
+            credentials: "same-origin",
+          });
+          if (!response.ok) {
+            throw new Error("full-scan-failed");
+          }
+          scanStatus.textContent = "Attendi 20-30 secondi, ricollegati a Pi-Setup e aggiorna questa pagina.";
+        } catch (error) {
+          scanStatus.textContent = "Impossibile avviare la scansione completa. Riprova tra qualche secondo.";
+          fullScanButton.disabled = false;
+        }
+      }
+
+      if (fullScanButton) {
+        fullScanButton.addEventListener("click", startFullScan);
+      }
 
       bindNetworkButtons();
     </script>

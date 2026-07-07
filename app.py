@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import io
+import ipaddress
 import time
 from hmac import compare_digest
 from threading import Lock, Thread
@@ -53,46 +53,15 @@ wifi_scan_state = {
 }
 
 
-def _escape_wifi_qr(value: str) -> str:
-    return (
-        value.replace("\\", "\\\\")
-        .replace(";", "\\;")
-        .replace(",", "\\,")
-        .replace(":", "\\:")
-        .replace('"', '\\"')
-    )
-
-
-def _make_qr_svg(payload: str) -> str:
-    try:
-        import qrcode
-        from qrcode.image.svg import SvgPathImage
-    except ImportError:
-        return ""
-
-    qr = qrcode.QRCode(border=2, box_size=8)
-    qr.add_data(payload)
-    qr.make(fit=True)
-    image = qr.make_image(image_factory=SvgPathImage)
-    stream = io.BytesIO()
-    image.save(stream)
-    svg = stream.getvalue().decode("utf-8")
-    return svg[svg.find("<svg") :] if "<svg" in svg else svg
-
-
-def _quick_access(status: dict[str, object]) -> dict[str, str]:
+def _access_sheet(status: dict[str, object]) -> dict[str, str]:
     portal_url = f"http://{status['portal_address']}"
-    ssid = _escape_wifi_qr(config.hotspot_ssid)
-    password = _escape_wifi_qr(config.hotspot_password)
-    if config.hotspot_password:
-        wifi_payload = f"WIFI:T:WPA;S:{ssid};P:{password};H:false;;"
-    else:
-        wifi_payload = f"WIFI:T:nopass;S:{ssid};H:false;;"
 
     return {
         "portal_url": portal_url,
-        "wifi_qr_svg": _make_qr_svg(wifi_payload),
-        "portal_qr_svg": _make_qr_svg(portal_url),
+        "hotspot_ssid": config.hotspot_ssid,
+        "hotspot_password": config.hotspot_password,
+        "portal_password": config.portal_password,
+        "portal_title": config.portal_title,
     }
 
 
@@ -101,6 +70,20 @@ def _hotspot_blocks_client_scan(status: dict[str, object]) -> bool:
         bool(status.get("hotspot_active"))
         and status.get("hotspot_interface") == status.get("client_wifi_interface")
     )
+
+
+def _request_from_hotspot_network() -> bool:
+    remote_addr = request.remote_addr or ""
+    try:
+        client_address = ipaddress.ip_address(remote_addr)
+        hotspot_network = ipaddress.ip_network(config.hotspot_address, strict=False)
+    except ValueError:
+        return False
+    return client_address in hotspot_network
+
+
+def _can_scan_without_losing_page(status: dict[str, object]) -> bool:
+    return bool(status.get("lan_connected")) and not _request_from_hotspot_network()
 
 
 def _networks_are_only_hotspot(networks: list[dict[str, str]]) -> bool:
@@ -149,15 +132,7 @@ def _run_full_wifi_scan_cycle() -> None:
     _pause_hotspot_recovery(config.hotspot_cooldown_seconds, "manual-full-scan")
 
     try:
-        time.sleep(2)
-        network_manager.stop_hotspot()
-        time.sleep(3)
-        network_manager.ensure_wifi_enabled()
-        networks = network_manager.list_networks()
-        visible_networks = [
-            network for network in networks if network.get("ssid") != config.hotspot_ssid
-        ]
-        network_manager.ensure_hotspot()
+        visible_networks = _scan_networks_with_hotspot_paused()
         _set_scan_state(
             state="completed",
             message=(
@@ -180,6 +155,30 @@ def _run_full_wifi_scan_cycle() -> None:
             completed_at=int(time.time()),
             last_error=detail,
         )
+
+
+def _scan_networks_with_hotspot_paused() -> list[dict[str, str]]:
+    hotspot_was_active = network_manager.hotspot_active()
+    try:
+        time.sleep(2)
+        if hotspot_was_active:
+            network_manager.stop_hotspot()
+            time.sleep(3)
+        network_manager.ensure_wifi_enabled()
+        networks = network_manager.list_networks()
+        visible_networks = [
+            network for network in networks if network.get("ssid") != config.hotspot_ssid
+        ]
+        if hotspot_was_active:
+            network_manager.ensure_hotspot()
+        return visible_networks
+    except NetworkManagerError:
+        if hotspot_was_active:
+            try:
+                network_manager.ensure_hotspot()
+            except NetworkManagerError:
+                pass
+        raise
 
 
 def _is_authenticated() -> bool:
@@ -245,6 +244,7 @@ def _render_index(
     except NetworkManagerError:
         live_networks = []
     scan_limited = _hotspot_blocks_client_scan(status)
+    lan_safe_scan = scan_limited and _can_scan_without_losing_page(status)
     networks = _choose_visible_networks(live_networks, scan_limited)
     return (
         render_template(
@@ -256,8 +256,9 @@ def _render_index(
             status=status,
             networks=networks,
             scan_limited=scan_limited,
+            lan_safe_scan=lan_safe_scan,
             full_scan=_scan_state_snapshot(),
-            quick_access=_quick_access(status),
+            access_sheet=_access_sheet(status),
             error_message=error_message,
             network_message=network_message,
             network_error=network_error,
@@ -477,6 +478,18 @@ def index():
     return _render_index()
 
 
+@app.get("/access-sheet")
+def access_sheet():
+    status = network_manager.current_status()
+    return render_template(
+        "access_sheet.html",
+        page_title=config.portal_title,
+        app_version=config.app_version,
+        status=status,
+        access_sheet=_access_sheet(status),
+    )
+
+
 @app.get("/api/status")
 def api_status():
     return jsonify(
@@ -495,11 +508,45 @@ def api_status():
 
 @app.get("/api/networks")
 def api_networks():
+    status = network_manager.current_status()
+    scan_limited = _hotspot_blocks_client_scan(status)
+    if scan_limited and _can_scan_without_losing_page(status):
+        try:
+            _pause_hotspot_recovery(config.hotspot_cooldown_seconds, "lan-full-scan")
+            networks = _scan_networks_with_hotspot_paused()
+            _set_scan_state(
+                state="completed",
+                message=(
+                    f"Scansione via LAN terminata: {len(networks)} reti trovate. "
+                    "La pagina e' rimasta raggiungibile tramite la LAN cablata."
+                ),
+                networks=networks,
+                started_at=int(time.time()),
+                completed_at=int(time.time()),
+                last_error=None,
+            )
+            return jsonify(
+                {
+                    "networks": networks,
+                    "mode": "lan-full-scan",
+                    "message": "Scansione completa eseguita tramite LAN cablata.",
+                }
+            )
+        except NetworkManagerError as error:
+            detail = error.stderr or error.stdout or str(error)
+            _set_scan_state(
+                state="error",
+                message="Scansione via LAN non riuscita; hotspot riattivato se possibile.",
+                completed_at=int(time.time()),
+                last_error=detail,
+            )
+            return jsonify({"networks": [], "mode": "error", "message": detail}), 500
+
     try:
         networks = network_manager.list_networks()
     except NetworkManagerError:
         networks = []
-    return jsonify({"networks": networks})
+    return jsonify({"networks": networks, "mode": "live-scan"})
 
 
 @app.get("/api/networks/full-scan")

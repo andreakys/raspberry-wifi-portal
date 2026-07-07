@@ -32,6 +32,11 @@
             <strong>{{ status.client_wifi_interface }}</strong>
           </article>
           <article>
+            <span class="label">Interfacce Wi-Fi</span>
+            <strong>{{ status.wifi_interface_count }}</strong>
+            <small>{{ status.wifi_interface_names|join(", ") or "n/d" }}</small>
+          </article>
+          <article>
             <span class="label">Connessione attiva</span>
             <strong>{{ status.active_connection or "Nessuna" }}</strong>
           </article>
@@ -58,42 +63,13 @@
         </div>
       </section>
 
-      <section class="panel quick-access-panel">
-        <div class="panel-header">
-          <h2>Accesso rapido telefono</h2>
-          <p>QR Wi-Fi per entrare nell'hotspot e QR portale per aprire la configurazione.</p>
-        </div>
-
-        <div class="qr-grid">
-          <article class="qr-item">
-            <div class="qr-box">
-              {% if quick_access.wifi_qr_svg %}
-              {{ quick_access.wifi_qr_svg|safe }}
-              {% else %}
-              <span class="muted">QR non disponibile</span>
-              {% endif %}
-            </div>
-            <div>
-              <span class="label">1. Hotspot</span>
-              <strong>{{ hotspot_ssid }}</strong>
-              <small>Contiene anche la password dell'hotspot temporaneo.</small>
-            </div>
-          </article>
-
-          <article class="qr-item">
-            <div class="qr-box">
-              {% if quick_access.portal_qr_svg %}
-              {{ quick_access.portal_qr_svg|safe }}
-              {% else %}
-              <span class="muted">QR non disponibile</span>
-              {% endif %}
-            </div>
-            <div>
-              <span class="label">2. Portale</span>
-              <strong>{{ quick_access.portal_url }}</strong>
-              <small>Apri il portale dopo il collegamento a {{ hotspot_ssid }}.</small>
-            </div>
-          </article>
+      <section class="panel access-panel">
+        <div class="panel-header panel-header-row">
+          <div>
+            <h2>Scheda accesso</h2>
+            <p>Pagina stampabile con SSID hotspot, password, indirizzo portale e password di accesso.</p>
+          </div>
+          <a class="secondary-button button-link" href="/access-sheet" target="_blank" rel="noopener">Stampa/PDF</a>
         </div>
       </section>
 
@@ -213,11 +189,18 @@
           {% if scan_limited %}
           <div class="message warning">
             Hotspot e Wi-Fi client usano entrambi {{ status.client_wifi_interface }}. La scansione live puo'
-            vedere solo {{ hotspot_ssid }}. Per cercare le reti vicine spegniamo l'hotspot per pochi secondi.
+            vedere solo {{ hotspot_ssid }}.
+            {% if lan_safe_scan %}
+            Sei collegato tramite LAN: il pulsante Scansiona puo' spegnere l'hotspot per pochi secondi e aggiornare qui la lista.
+            {% else %}
+            Per cercare le reti vicine spegniamo l'hotspot per pochi secondi con Scansione completa.
+            {% endif %}
           </div>
+          {% if not lan_safe_scan %}
           <button type="button" class="secondary-button full-width-button" id="full-scan-button">
             Scansione completa
           </button>
+          {% endif %}
           {% endif %}
 
           {% if full_scan.state in ["running", "completed", "error"] %}
@@ -414,7 +397,7 @@
 
       async function scanNetworks() {
         scanButton.disabled = true;
-        scanStatus.textContent = "Scansione reti Wi-Fi in corso...";
+          scanStatus.textContent = "Scansione reti Wi-Fi in corso...";
 
         try {
           const response = await fetch("/api/networks", { credentials: "same-origin" });
@@ -423,7 +406,7 @@
           }
           const data = await response.json();
           renderNetworks(data.networks || []);
-          scanStatus.textContent = `Scansione completata: ${(data.networks || []).length} reti trovate.`;
+          scanStatus.textContent = data.message || `Scansione completata: ${(data.networks || []).length} reti trovate.`;
         } catch (error) {
           scanStatus.textContent = "Scansione non riuscita. Riprova tra qualche secondo.";
         } finally {

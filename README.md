@@ -56,7 +56,7 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 - portale web locale da smartphone o tablet
 - accesso protetto da password del portale
 - numero versione visibile in login, dashboard e API status
-- QR dinamici per collegare il telefono all'hotspot e aprire il portale
+- scheda accesso stampabile o salvabile in PDF dal browser
 - pulsante di scansione reti Wi-Fi disponibili
 - scansione completa con riavvio temporaneo hotspot quando esiste una sola radio Wi-Fi
 - separazione opzionale tra interfaccia hotspot e interfaccia Wi-Fi client
@@ -132,7 +132,7 @@ raspberry-wifi-portal/
   - verifica stato e connettivita'
 
 - `templates/index.html`
-  Pagina principale con form di configurazione, QR di accesso rapido e scansione reti.
+  Pagina principale con form di configurazione, scheda accesso stampabile e scansione reti.
 
 - `templates/login.html`
   Pagina di accesso protetto prima delle impostazioni.
@@ -191,12 +191,15 @@ http://192.168.4.1
 
 Il portale richiede la password amministrativa `PORTAL_PASSWORD`. Se non viene indicata durante l'installazione, `install.sh` ne genera una sicura e la stampa a fine procedura.
 
-Dopo il login, la sezione `Accesso rapido telefono` mostra due QR dinamici:
+Dopo il login, la sezione `Scheda accesso` permette di aprire una pagina stampabile:
 
-- QR Wi-Fi: collega un telefono all'hotspot temporaneo usando SSID e password correnti
-- QR portale: apre `http://192.168.4.1` o l'indirizzo configurato in `HOTSPOT_ADDRESS`
+- SSID hotspot temporaneo
+- password hotspot
+- indirizzo del portale
+- password portale
+- interfacce Wi-Fi rilevate
 
-Il QR Wi-Fi contiene la password dell'hotspot temporaneo, quindi viene mostrato solo dentro il portale protetto.
+Da quella pagina puoi usare `Stampa/PDF` del browser per stampare la scheda o salvarla come PDF. La scheda contiene password operative, quindi va condivisa solo con persone autorizzate.
 
 ### 3. Configurazione
 
@@ -216,7 +219,11 @@ La sezione `Reti visibili` include il pulsante `Scansiona`, che forza una nuova 
 
 Se hotspot e Wi-Fi client usano la stessa interfaccia, ad esempio `wlan0`, la scansione live puo' vedere solo l'hotspot `Pi-Setup` mentre la radio lavora in modalita' access point. In quel caso il portale mostra `Scansione completa`: spegne l'hotspot per pochi secondi, scansiona le reti vicine, riattiva `Pi-Setup` e conserva il risultato. Il telefono deve poi ricollegarsi all'hotspot e aggiornare la pagina.
 
-Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.10.1`: questa release riconosce anche le installazioni in cui `NetworkManager` indica le connessioni Wi-Fi come `802-11-wireless`.
+Se accedi dal PC tramite cavo LAN e la LAN e' presente, il pulsante `Scansiona` puo' fare la scansione completa direttamente: spegne l'hotspot per pochi secondi, cerca le reti, riattiva l'hotspot e aggiorna la lista senza perdere la pagina.
+
+Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` in alto: `1` indica solo la radio della scheda, `2` con nomi come `wlan0, wlan1` indica anche un dongle USB. Per separarle imposta `HOTSPOT_INTERFACE=wlan0` e `CLIENT_WIFI_INTERFACE=wlan1` in `/etc/raspberry-wifi-portal/portal.env`.
+
+Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.11.0`: questa release riconosce anche le installazioni in cui `NetworkManager` indica le connessioni Wi-Fi come `802-11-wireless`.
 
 ### 4. Provisioning
 
@@ -467,7 +474,7 @@ grep -E 'PORTAL_TITLE|APP_VERSION' /etc/raspberry-wifi-portal/portal.env
 sudo systemctl restart raspberry-wifi-portal.service
 ```
 
-Il portale aggiornato mostra un badge `Versione ...`, il pulsante `Scansiona`, il tasto `Esci` e la sezione `Accesso rapido telefono`. Se non li vedi, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
+Il portale aggiornato mostra un badge `Versione ...`, il pulsante `Scansiona`, il tasto `Esci`, il riquadro `Interfacce Wi-Fi` e la sezione `Scheda accesso`. Se non li vedi, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
 
 ## Aggiornamento
 

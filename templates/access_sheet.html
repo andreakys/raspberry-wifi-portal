@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Scheda accesso - {{ page_title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body class="print-body">
+    <main class="print-sheet">
+      <header class="print-header">
+        <div>
+          <p class="eyebrow">Scheda accesso</p>
+          <h1>{{ page_title }}</h1>
+          <p class="muted">Versione {{ app_version }}</p>
+        </div>
+        <button type="button" class="secondary-button no-print" onclick="window.print()">Stampa/PDF</button>
+      </header>
+
+      <section class="print-grid">
+        <article>
+          <span class="label">Hotspot temporaneo</span>
+          <strong>{{ access_sheet.hotspot_ssid }}</strong>
+        </article>
+        <article>
+          <span class="label">Password hotspot</span>
+          <strong>{{ access_sheet.hotspot_password }}</strong>
+        </article>
+        <article>
+          <span class="label">Portale</span>
+          <strong>{{ access_sheet.portal_url }}</strong>
+        </article>
+        <article>
+          <span class="label">Password portale</span>
+          <strong>{{ access_sheet.portal_password }}</strong>
+        </article>
+      </section>
+
+      <section class="print-notes">
+        <h2>Come usare questa scheda</h2>
+        <ol>
+          <li>Collega telefono o PC alla rete Wi-Fi indicata come hotspot temporaneo.</li>
+          <li>Apri l'indirizzo del portale nel browser.</li>
+          <li>Inserisci la password portale e configura la rete Wi-Fi definitiva.</li>
+        </ol>
+      </section>
+
+      <section class="print-notes">
+        <h2>Interfacce rilevate</h2>
+        <p>
+          Hotspot: <strong>{{ status.hotspot_interface }}</strong>.
+          Wi-Fi client: <strong>{{ status.client_wifi_interface }}</strong>.
+          Interfacce Wi-Fi: <strong>{{ status.wifi_interface_names|join(", ") or "n/d" }}</strong>.
+        </p>
+        <p class="muted">Conservare questa scheda con cura: contiene password operative.</p>
+      </section>
+    </main>
+  </body>
+</html>

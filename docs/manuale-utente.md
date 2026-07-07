@@ -2,7 +2,7 @@
 
 ## Wi-Fi Setup
 
-Versione documento: 1.10.1
+Versione documento: 1.11.0
 Data: 7 luglio 2026
 
 ## 1. Scopo
@@ -16,7 +16,7 @@ Il sistema crea un hotspot temporaneo chiamato `Pi-Setup` quando il Raspberry no
 - hotspot temporaneo per il primo accesso
 - pagina web locale protetta da password per la configurazione
 - versione applicazione visibile per verificare gli aggiornamenti installati
-- QR dinamici per collegare il telefono all'hotspot e aprire il portale
+- scheda accesso stampabile o salvabile in PDF dal browser
 - scansione manuale delle reti Wi-Fi disponibili dal portale
 - scansione completa con riavvio temporaneo hotspot quando si usa una sola radio Wi-Fi
 - separazione opzionale tra hotspot e Wi-Fi client con due interfacce
@@ -337,21 +337,26 @@ Se hai usato l'installazione guidata e hai lasciato vuota la password portale, l
 /etc/raspberry-wifi-portal/portal.env
 ```
 
-### 7.3 Accesso rapido con QR
+### 7.3 Scheda accesso stampabile
 
-Dopo il login, la sezione `Accesso rapido telefono` mostra due QR:
+Dopo il login, la sezione `Scheda accesso` mostra il pulsante `Stampa/PDF`.
 
-- QR `Hotspot`: collega un telefono all'hotspot temporaneo usando SSID e password correnti.
-- QR `Portale`: apre direttamente l'indirizzo locale del portale, ad esempio `http://192.168.4.1`.
+Il pulsante apre una pagina semplice, pensata per essere stampata o salvata come PDF dal browser, con:
 
-Il QR hotspot contiene la password dell'hotspot temporaneo. Per questo viene mostrato solo nel portale protetto da login.
+- nome hotspot temporaneo
+- password hotspot
+- indirizzo portale, ad esempio `http://192.168.4.1`
+- password portale
+- interfacce Wi-Fi rilevate
+
+La scheda contiene password operative: stampala o inviala solo a persone autorizzate.
 
 Flusso consigliato:
 
-1. Scansiona il QR `Hotspot` con la fotocamera del telefono.
-2. Conferma il collegamento alla rete temporanea.
-3. Scansiona il QR `Portale` oppure apri manualmente l'indirizzo mostrato.
-4. Inserisci la password portale e configura la rete finale.
+1. Apri `Scheda accesso`.
+2. Premi `Stampa/PDF`.
+3. Stampa la pagina oppure scegli `Salva come PDF` nel browser.
+4. Usa la scheda per collegarti all'hotspot e aprire il portale.
 
 ### 7.4 Scansione reti Wi-Fi
 
@@ -361,7 +366,9 @@ Il Raspberry forza una nuova scansione sull'interfaccia `CLIENT_WIFI_INTERFACE` 
 
 Se `HOTSPOT_INTERFACE` e `CLIENT_WIFI_INTERFACE` sono la stessa radio, per esempio `wlan0`, la scansione live puo' vedere solo `Pi-Setup` mentre l'hotspot e' attivo. In questo caso il portale mostra anche `Scansione completa`.
 
-Nota versione: dalla versione `1.10.1` il portale riconosce anche le installazioni in cui `nmcli` indica le connessioni Wi-Fi come `802-11-wireless`. Se vedi solo `Pi-Setup` e non compare `Scansione completa`, verifica che in alto nel portale sia mostrata almeno la versione `1.10.1`.
+Se accedi al portale da un PC collegato via cavo LAN e la LAN e' presente, il pulsante `Scansiona` puo' fare direttamente una scansione completa: il portale spegne l'hotspot per pochi secondi, cerca le reti e aggiorna la lista restando raggiungibile tramite LAN.
+
+Nota versione: dalla versione `1.11.0` il portale riconosce anche le installazioni in cui `nmcli` indica le connessioni Wi-Fi come `802-11-wireless`, mostra quante interfacce Wi-Fi sono rilevate e distingue la scansione da LAN cablata.
 
 Quando premi `Scansione completa`:
 
@@ -372,6 +379,8 @@ Quando premi `Scansione completa`:
 5. devi ricollegarti a `Pi-Setup` e aggiornare la pagina
 
 Con due interfacce Wi-Fi, ad esempio hotspot su `wlan0` e client su `wlan1`, non serve spegnere l'hotspot: la scansione live usa direttamente la radio client.
+
+Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` nella parte alta del portale. Se mostra `2` e nomi come `wlan0, wlan1`, il Raspberry vede anche il dongle USB. In quel caso puoi configurare `HOTSPOT_INTERFACE=wlan0` e `CLIENT_WIFI_INTERFACE=wlan1` in `/etc/raspberry-wifi-portal/portal.env`.
 
 ### 7.5 Configurazione di una rete WPA2/WPA3 Personal
 
@@ -515,7 +524,8 @@ Verifica nel portale la presenza di:
 - badge `Versione`
 - pulsante `Scansiona`
 - tasto `Esci`
-- sezione `Accesso rapido telefono`
+- riquadro `Interfacce Wi-Fi`
+- sezione `Scheda accesso`
 
 ## 12. Pubblicazione su GitHub
 
@@ -584,8 +594,9 @@ sudo ./scripts/install.sh --profile balanced
 - apri `http://192.168.4.1`
 - accedi con la password portale
 - controlla il badge versione
-- usa i QR rapidi se devi collegare altri telefoni al setup
+- usa `Scheda accesso` se devi stampare o salvare in PDF i dati di accesso
 - premi `Scansiona` per aggiornare le reti disponibili
+- se sei collegato via LAN, `Scansiona` puo' fare la scansione completa senza perdere la pagina
 - se vedi solo `Pi-Setup` e hai una sola radio Wi-Fi, usa `Scansione completa`
 - inserisci i dati della rete finale
 - attendi il tentativo di connessione

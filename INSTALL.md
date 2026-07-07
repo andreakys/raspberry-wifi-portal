@@ -30,7 +30,7 @@ Alla fine collegati all'hotspot configurato e apri:
 http://192.168.4.1
 ```
 
-Dopo il login il portale mostra anche due QR: uno per collegare rapidamente altri telefoni all'hotspot temporaneo e uno per aprire direttamente la pagina di configurazione.
+Dopo il login il portale mostra anche `Scheda accesso`: una pagina stampabile o salvabile come PDF con SSID hotspot, password, indirizzo portale e password di accesso.
 In alto trovi anche il numero di versione, utile per verificare se il servizio sta eseguendo davvero l'ultimo codice installato.
 
 ## Installazione non interattiva

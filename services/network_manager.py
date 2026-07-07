@@ -109,10 +109,15 @@ class NetworkManagerService:
 
     def current_status(self) -> dict[str, Any]:
         interfaces = self.list_ip_interfaces()
+        wifi_interfaces = self._wifi_interfaces(interfaces)
         return {
             "wifi_interface": self.config.wifi_interface,
             "hotspot_interface": self.config.hotspot_interface,
             "client_wifi_interface": self.config.client_wifi_interface,
+            "wifi_interfaces": wifi_interfaces,
+            "wifi_interface_names": [item["name"] for item in wifi_interfaces],
+            "wifi_interface_count": len(wifi_interfaces),
+            "has_separate_wifi_interfaces": self.config.hotspot_interface != self.config.client_wifi_interface,
             "connectivity": self.connectivity(),
             "device_state": self.device_state(),
             "active_connection": self.active_connection_name(),
@@ -187,6 +192,9 @@ class NetworkManagerService:
 
     def _lan_interfaces(self, interfaces: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return [item for item in interfaces if item.get("type") == "ethernet"]
+
+    def _wifi_interfaces(self, interfaces: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return [item for item in interfaces if item.get("type") == "wifi"]
 
     def configure_interface_ipv4(self, payload: dict[str, str]) -> str:
         interface = payload.get("interface", "").strip()

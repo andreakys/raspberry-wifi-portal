@@ -231,7 +231,7 @@ Se accedi dal PC tramite cavo LAN e la LAN e' presente, il pulsante `Scansiona` 
 
 Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` in alto: `1` indica solo la radio della scheda, `2` con nomi come `wlan0, wlan1` indica anche un dongle USB. Per separarle imposta `HOTSPOT_INTERFACE=wlan0` e `CLIENT_WIFI_INTERFACE=wlan1` in `/etc/raspberry-wifi-portal/portal.env`.
 
-Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.12.0`: questa release riconosce anche le installazioni in cui `NetworkManager` indica le connessioni Wi-Fi come `802-11-wireless` e aggiunge temperatura scheda e riavvio.
+Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.12.1`: questa release riconosce anche le installazioni in cui `NetworkManager` indica le connessioni Wi-Fi come `802-11-wireless` e usa le nuove etichette delle sezioni rete.
 
 ### 4. Provisioning
 
@@ -368,9 +368,9 @@ sudo ./scripts/apply_recovery_profile.sh balanced
 
 Puoi sostituire `balanced` con `stable` oppure `unstable`.
 
-## Gestione indirizzi IP LAN
+## Interfacce di rete e indirizzi IP
 
-Se il Raspberry e' collegato anche con cavo Ethernet, il portale mostra nella sezione `Indirizzi IP`:
+Se il Raspberry e' collegato anche con cavo Ethernet, il portale mostra nella sezione `Interfacce di rete e indirizzi IP`:
 
 - nome interfaccia, ad esempio `eth0` o `wlan0`
 - tipo e stato
@@ -380,12 +380,14 @@ Se il Raspberry e' collegato anche con cavo Ethernet, il portale mostra nella se
 - DNS
 - metodo IPv4, ad esempio `auto` o `manual`
 
-Dalla stessa sezione puoi impostare:
+Nel form `Modifica indirizzo IP` puoi impostare:
 
 - `DHCP automatico`
 - `Indirizzo statico`, nel formato `192.168.1.50/24`
 - gateway opzionale
 - DNS opzionali separati da virgola, spazio o punto e virgola
+
+Il pulsante di conferma e' `Applica configurazione IP`.
 
 Per evitare di perdere l'accesso al portale durante il setup, l'interfaccia che sta servendo l'hotspot temporaneo viene mostrata ma non puo' essere modificata finche' l'hotspot e' attivo. La configurazione e' pensata soprattutto per la LAN cablata, ad esempio `eth0`.
 

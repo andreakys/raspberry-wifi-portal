@@ -2,7 +2,7 @@
 
 ## Pi Network Manager
 
-Versione documento: 1.12.0
+Versione documento: 1.12.1
 Data: 7 luglio 2026
 
 ## 1. Scopo
@@ -284,9 +284,9 @@ Uso consigliato:
 - `balanced` per uso generale
 - `unstable` per reti con blackout o roaming piu' frequenti
 
-### 6.7 Gestione indirizzi IP LAN
+### 6.7 Interfacce di rete e indirizzi IP
 
-Se il Raspberry e' collegato anche con cavo Ethernet, il portale mostra una sezione `Indirizzi IP`.
+Se il Raspberry e' collegato anche con cavo Ethernet, il portale mostra una sezione `Interfacce di rete e indirizzi IP`.
 
 Per ogni interfaccia vengono mostrati:
 
@@ -298,7 +298,7 @@ Per ogni interfaccia vengono mostrati:
 - DNS
 - metodo IPv4, ad esempio `auto` o `manual`
 
-Dalla stessa sezione puoi configurare una interfaccia in:
+Dalla stessa sezione puoi usare `Modifica indirizzo IP` per configurare una interfaccia in:
 
 - `DHCP automatico`
 - `Indirizzo statico`
@@ -360,7 +360,7 @@ Flusso consigliato:
 3. Stampa la pagina oppure scegli `Salva come PDF` nel browser.
 4. Usa la scheda per collegarti all'hotspot e aprire il portale.
 
-La scheda accesso si trova in fondo alla pagina principale, dopo le sezioni di configurazione rete e indirizzi IP.
+La scheda accesso si trova in fondo alla pagina principale, dopo le sezioni `Configura collegamento Wi-Fi` e `Interfacce di rete e indirizzi IP`.
 
 ### 7.4 Temperatura e riavvio
 
@@ -378,7 +378,7 @@ Se `HOTSPOT_INTERFACE` e `CLIENT_WIFI_INTERFACE` sono la stessa radio, per esemp
 
 Se accedi al portale da un PC collegato via cavo LAN e la LAN e' presente, il pulsante `Scansiona` puo' fare direttamente una scansione completa: il portale spegne l'hotspot per pochi secondi, cerca le reti e aggiorna la lista restando raggiungibile tramite LAN.
 
-Nota versione: dalla versione `1.12.0` il portale riconosce anche le installazioni in cui `nmcli` indica le connessioni Wi-Fi come `802-11-wireless`, mostra quante interfacce Wi-Fi sono rilevate, distingue la scansione da LAN cablata e mostra temperatura/riavvio.
+Nota versione: dalla versione `1.12.1` il portale riconosce anche le installazioni in cui `nmcli` indica le connessioni Wi-Fi come `802-11-wireless`, mostra quante interfacce Wi-Fi sono rilevate, distingue la scansione da LAN cablata e usa le nuove etichette delle sezioni rete.
 
 Quando premi `Scansione completa`:
 
@@ -392,9 +392,11 @@ Con due interfacce Wi-Fi, ad esempio hotspot su `wlan0` e client su `wlan1`, non
 
 Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` nella parte alta del portale. Se mostra `2` e nomi come `wlan0, wlan1`, il Raspberry vede anche il dongle USB. In quel caso puoi configurare `HOTSPOT_INTERFACE=wlan0` e `CLIENT_WIFI_INTERFACE=wlan1` in `/etc/raspberry-wifi-portal/portal.env`.
 
-### 7.6 Configurazione di una rete WPA2/WPA3 Personal
+### 7.6 Configura collegamento Wi-Fi
 
-Compila:
+La sezione `Configura collegamento Wi-Fi` raccoglie SSID, tipo di sicurezza e credenziali della rete finale.
+
+Per una rete WPA2/WPA3 Personal compila:
 
 - `SSID`
 - `Password Wi-Fi`

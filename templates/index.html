@@ -75,7 +75,7 @@
       <section class="content-grid">
         <article class="panel">
           <div class="panel-header">
-            <h2>Configura rete</h2>
+            <h2>Configura collegamento Wi-Fi</h2>
             <p>Supporto base per Wi-Fi aperte, WPA2/WPA3 personal e 802.1X.</p>
           </div>
 
@@ -228,8 +228,8 @@
 
       <section class="panel network-panel">
         <div class="panel-header">
-          <h2>Indirizzi IP</h2>
-          <p>Stato delle interfacce e configurazione IPv4 per LAN o profili non usati dall'hotspot.</p>
+          <h2>Interfacce di rete e indirizzi IP</h2>
+          <p>Stato delle interfacce e modifica indirizzo IP per LAN o profili non usati dall'hotspot.</p>
         </div>
 
         {% if network_message %}
@@ -277,6 +277,7 @@
         </div>
 
         <form method="post" action="/network/ipv4" class="setup-form ip-form" id="ip-form">
+          <h3>Modifica indirizzo IP</h3>
           <label>
             <span>Interfaccia</span>
             <select name="interface" id="ip-interface" required>
@@ -313,7 +314,7 @@
             </label>
           </div>
 
-          <button type="submit" class="primary-button">Applica rete</button>
+          <button type="submit" class="primary-button">Applica configurazione IP</button>
         </form>
       </section>
 

@@ -10,7 +10,10 @@
     <main class="page-shell">
       <section class="hero-card">
         <div class="topbar">
-          <p class="eyebrow">Setup temporaneo</p>
+          <div>
+            <p class="eyebrow">Setup temporaneo</p>
+            <span class="version-badge">Versione {{ app_version }}</span>
+          </div>
           <form method="post" action="/logout">
             <button type="submit" class="utility-button">Esci</button>
           </form>
@@ -47,6 +50,10 @@
           <article>
             <span class="label">Portale</span>
             <strong>{{ portal_address }}</strong>
+          </article>
+          <article>
+            <span class="label">Versione</span>
+            <strong>{{ app_version }}</strong>
           </article>
         </div>
       </section>

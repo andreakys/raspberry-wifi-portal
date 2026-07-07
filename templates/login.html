@@ -9,7 +9,12 @@
   <body>
     <main class="page-shell login-shell">
       <section class="hero-card login-card">
-        <p class="eyebrow">Accesso protetto</p>
+        <div class="topbar">
+          <div>
+            <p class="eyebrow">Accesso protetto</p>
+            <span class="version-badge">Versione {{ app_version }}</span>
+          </div>
+        </div>
         <h1>{{ page_title }}</h1>
         <p class="lead">
           Inserisci la password del portale per modificare Wi-Fi, hotspot e indirizzi IP.

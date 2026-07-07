@@ -1,6 +1,6 @@
-# Raspberry Pi Wi-Fi Setup Portal
+# Wi-Fi Setup
 
-Prototipo reale per Raspberry Pi 5 che espone un hotspot temporaneo con portale web locale per configurare il collegamento Wi-Fi del dispositivo, inclusi i casi base `WPA2/WPA3 Personal` e `802.1X`.
+Portale per Raspberry Pi 5 che espone un hotspot temporaneo con pagina web locale per configurare il collegamento Wi-Fi del dispositivo, inclusi i casi base `WPA2/WPA3 Personal` e `802.1X`.
 
 ## Documentazione
 
@@ -45,15 +45,17 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 1. collega il telefono a `Pi-Setup`
 2. apri `http://192.168.4.1`
 3. accedi con la password portale stampata dall'installer
-4. premi `Scansiona` per aggiornare le reti visibili
-5. inserisci o seleziona i dati della rete finale
-6. scegli un profilo recovery `stable`, `balanced` o `unstable` se necessario
+4. verifica che in alto compaia la versione corrente del portale
+5. premi `Scansiona` per aggiornare le reti visibili
+6. inserisci o seleziona i dati della rete finale
+7. scegli un profilo recovery `stable`, `balanced` o `unstable` se necessario
 
 ## Funzioni principali
 
 - hotspot temporaneo per onboarding senza cavo Ethernet
 - portale web locale da smartphone o tablet
 - accesso protetto da password del portale
+- numero versione visibile in login, dashboard e API status
 - QR dinamici per collegare il telefono all'hotspot e aprire il portale
 - pulsante di scansione reti Wi-Fi disponibili
 - separazione opzionale tra interfaccia hotspot e interfaccia Wi-Fi client
@@ -226,6 +228,8 @@ Il backend crea una nuova connessione `NetworkManager`, restituisce subito una p
 | --- | --- | --- |
 | `PORTAL_HOST` | `0.0.0.0` | Host Flask |
 | `PORTAL_PORT` | `80` | Porta HTTP |
+| `PORTAL_TITLE` | `Wi-Fi Setup` | Titolo mostrato nel portale |
+| `APP_VERSION` | versione del codice | Versione mostrata nel portale |
 | `PORTAL_PASSWORD` | generata dall'installer | Password di accesso al portale web |
 | `PORTAL_SESSION_SECRET` | generata dall'installer | Chiave server per firmare la sessione di login |
 | `WIFI_INTERFACE` | `wlan0` | Interfaccia Wi-Fi storica, usata come default per hotspot e client |
@@ -449,6 +453,17 @@ sudo systemctl status raspberry-wifi-portal.service
 sudo journalctl -u raspberry-wifi-portal.service -f
 ```
 
+Se dopo un aggiornamento l'interfaccia sembra vecchia, controlla:
+
+```bash
+cd /opt/raspberry-wifi-portal
+git rev-parse --short HEAD 2>/dev/null || true
+grep -E 'PORTAL_TITLE|APP_VERSION' /etc/raspberry-wifi-portal/portal.env
+sudo systemctl restart raspberry-wifi-portal.service
+```
+
+Il portale aggiornato mostra un badge `Versione ...`, il pulsante `Scansiona`, il tasto `Esci` e la sezione `Accesso rapido telefono`. Se non li vedi, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
+
 ## Aggiornamento
 
 Per aggiornare:
@@ -459,6 +474,7 @@ Per aggiornare:
 4. rilancia `sudo ./scripts/install.sh`
 
 Il file `/etc/raspberry-wifi-portal/portal.env` viene mantenuto.
+L'installer aggiorna automaticamente il vecchio titolo di default `Raspberry Pi Wi-Fi Setup` in `Wi-Fi Setup`; eventuali titoli personalizzati vengono lasciati invariati.
 
 ## Pubblicazione su GitHub
 

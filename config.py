@@ -3,6 +3,9 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+APP_VERSION = "1.9.0"
+DEFAULT_PORTAL_TITLE = "Wi-Fi Setup"
+
 
 def _bool_from_env(name: str, default: bool = False) -> bool:
     value = os.getenv(name)
@@ -36,7 +39,8 @@ class PortalConfig:
     )
     hotspot_address: str = _env("HOTSPOT_ADDRESS", "192.168.4.1/24")
     connection_wait_seconds: int = int(os.getenv("CONNECTION_WAIT_SECONDS", "45"))
-    portal_title: str = _env("PORTAL_TITLE", "Raspberry Pi Wi-Fi Setup")
+    portal_title: str = _env("PORTAL_TITLE", DEFAULT_PORTAL_TITLE)
+    app_version: str = _env("APP_VERSION", APP_VERSION)
     auto_recovery_enabled: bool = _bool_from_env("AUTO_RECOVERY_ENABLED", True)
     recovery_check_interval_seconds: int = int(os.getenv("RECOVERY_CHECK_INTERVAL_SECONDS", "5"))
     boot_connection_grace_seconds: int = int(os.getenv("BOOT_CONNECTION_GRACE_SECONDS", "75"))

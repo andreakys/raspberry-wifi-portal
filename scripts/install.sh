@@ -278,6 +278,11 @@ if [[ -z "${existing_portal_session_secret}" ]]; then
   set_env_value "PORTAL_SESSION_SECRET" "$(generate_secret)"
 fi
 
+existing_portal_title="$(get_env_value PORTAL_TITLE)"
+if [[ -z "${existing_portal_title}" || "${existing_portal_title}" == "Raspberry Pi Wi-Fi Setup" ]]; then
+  set_env_value "PORTAL_TITLE" "Wi-Fi Setup"
+fi
+
 [[ -z "${HOTSPOT_SSID_VALUE}" ]] || set_env_value "HOTSPOT_SSID" "${HOTSPOT_SSID_VALUE}"
 [[ -z "${HOTSPOT_PASSWORD_VALUE}" ]] || set_env_value "HOTSPOT_PASSWORD" "${HOTSPOT_PASSWORD_VALUE}"
 [[ -z "${PORTAL_PASSWORD_VALUE}" ]] || set_env_value "PORTAL_PASSWORD" "${PORTAL_PASSWORD_VALUE}"

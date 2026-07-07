@@ -1,9 +1,9 @@
 # Manuale Utente
 
-## Raspberry Pi Wi-Fi Setup Portal
+## Wi-Fi Setup
 
-Versione documento: 1.8
-Data: 6 luglio 2026
+Versione documento: 1.9
+Data: 7 luglio 2026
 
 ## 1. Scopo
 
@@ -15,6 +15,7 @@ Il sistema crea un hotspot temporaneo chiamato `Pi-Setup` quando il Raspberry no
 
 - hotspot temporaneo per il primo accesso
 - pagina web locale protetta da password per la configurazione
+- versione applicazione visibile per verificare gli aggiornamenti installati
 - QR dinamici per collegare il telefono all'hotspot e aprire il portale
 - scansione manuale delle reti Wi-Fi disponibili dal portale
 - separazione opzionale tra hotspot e Wi-Fi client con due interfacce
@@ -154,7 +155,8 @@ Esempio:
 PORTAL_HOST=0.0.0.0
 PORTAL_PORT=80
 PORTAL_DEBUG=false
-PORTAL_TITLE=Raspberry Pi Wi-Fi Setup
+PORTAL_TITLE=Wi-Fi Setup
+APP_VERSION=
 PORTAL_PASSWORD=password-di-accesso-al-portale
 PORTAL_SESSION_SECRET=chiave-sessione-generata
 WIFI_INTERFACE=wlan0
@@ -326,6 +328,7 @@ http://192.168.4.1
 ```
 
 Il portale mostra prima la pagina di accesso. Inserisci la password `PORTAL_PASSWORD`.
+In alto viene mostrata anche la versione applicazione: usala per verificare che il Raspberry stia eseguendo davvero l'ultima release installata.
 
 Se hai usato l'installazione guidata e hai lasciato vuota la password portale, lo script ne ha generata una automaticamente e l'ha stampata alla fine dell'installazione. La puoi ritrovare o cambiare in:
 
@@ -482,6 +485,22 @@ Per aggiornare l'applicazione:
 4. riesegui `sudo ./scripts/install.sh --profile balanced`
 
 Il file `/etc/raspberry-wifi-portal/portal.env` viene mantenuto.
+Se il titolo e' ancora il vecchio default `Raspberry Pi Wi-Fi Setup`, l'installer lo aggiorna automaticamente a `Wi-Fi Setup`. I titoli personalizzati non vengono sovrascritti.
+
+Se dopo l'aggiornamento l'interfaccia sembra vecchia:
+
+```bash
+cd /opt/raspberry-wifi-portal
+sudo ./scripts/install.sh --profile balanced
+sudo systemctl restart raspberry-wifi-portal.service
+```
+
+Verifica nel portale la presenza di:
+
+- badge `Versione`
+- pulsante `Scansiona`
+- tasto `Esci`
+- sezione `Accesso rapido telefono`
 
 ## 12. Pubblicazione su GitHub
 
@@ -549,6 +568,7 @@ sudo ./scripts/install.sh --profile balanced
 - collega il telefono a `Pi-Setup`
 - apri `http://192.168.4.1`
 - accedi con la password portale
+- controlla il badge versione
 - usa i QR rapidi se devi collegare altri telefoni al setup
 - premi `Scansiona` per aggiornare le reti disponibili
 - inserisci i dati della rete finale

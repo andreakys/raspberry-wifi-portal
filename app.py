@@ -153,6 +153,7 @@ def _render_index(
         render_template(
             "index.html",
             page_title=config.portal_title,
+            app_version=config.app_version,
             hotspot_ssid=config.hotspot_ssid,
             portal_address=status["portal_address"],
             status=status,
@@ -338,6 +339,7 @@ def login():
     return render_template(
         "login.html",
         page_title=config.portal_title,
+        app_version=config.app_version,
         hotspot_ssid=config.hotspot_ssid,
         error_message=None,
         next_url=_safe_next(),
@@ -356,6 +358,7 @@ def login_submit():
         render_template(
             "login.html",
             page_title=config.portal_title,
+            app_version=config.app_version,
             hotspot_ssid=config.hotspot_ssid,
             error_message="Password portale non valida.",
             next_url=_safe_next(),
@@ -380,6 +383,10 @@ def api_status():
     return jsonify(
         {
             "network": network_manager.current_status(),
+            "app": {
+                "title": config.portal_title,
+                "version": config.app_version,
+            },
             "provisioning": provisioning_state,
             "recovery": recovery_state,
         }
@@ -417,6 +424,7 @@ def configure():
     return render_template(
         "status.html",
         page_title=config.portal_title,
+        app_version=config.app_version,
         success=True,
         pending=True,
         message=provisioning_state["message"],

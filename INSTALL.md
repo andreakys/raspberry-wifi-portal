@@ -31,6 +31,7 @@ http://192.168.4.1
 ```
 
 Dopo il login il portale mostra anche due QR: uno per collegare rapidamente altri telefoni all'hotspot temporaneo e uno per aprire direttamente la pagina di configurazione.
+In alto trovi anche il numero di versione, utile per verificare se il servizio sta eseguendo davvero l'ultimo codice installato.
 
 ## Installazione non interattiva
 
@@ -81,6 +82,15 @@ sudo ./scripts/install.sh --profile balanced
 ```
 
 Il file `/etc/raspberry-wifi-portal/portal.env` viene conservato. Le opzioni passate allo script aggiornano solo i valori corrispondenti.
+Se il file contiene ancora il vecchio titolo di default `Raspberry Pi Wi-Fi Setup`, l'installer lo migra a `Wi-Fi Setup`.
+
+Se l'interfaccia non cambia dopo un aggiornamento:
+
+```bash
+cd /opt/raspberry-wifi-portal
+sudo ./scripts/install.sh --profile balanced
+sudo systemctl restart raspberry-wifi-portal.service
+```
 
 ## Comandi di verifica
 

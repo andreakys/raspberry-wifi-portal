@@ -30,6 +30,7 @@ CONNECTED_CONNECTIVITY_STATES = {"connected", "connected (site only)", "full", "
 CONNECTING_DEVICE_STATES = {"prepare", "config", "ip-config", "ip-check", "secondaries", "connecting"}
 CONNECTED_DEVICE_STATES = {"connected", "activated"}
 DISCONNECTED_DEVICE_STATES = {"disconnected", "unavailable", "failed", "deactivating"}
+WIFI_CONNECTION_TYPES = {"wifi", "802-11-wireless", "wireless"}
 
 
 class NetworkManagerService:
@@ -68,9 +69,12 @@ class NetworkManagerService:
             if not line.strip():
                 continue
             name, _, connection_type = line.partition(":")
-            if name == self.config.hotspot_connection_name and connection_type == "wifi":
+            if name == self.config.hotspot_connection_name and self._is_wifi_connection_type(connection_type):
                 return True
-        return False
+        return self.active_connection_name_for_device(self.config.hotspot_interface) == self.config.hotspot_connection_name
+
+    def _is_wifi_connection_type(self, connection_type: str) -> bool:
+        return connection_type.strip().lower() in WIFI_CONNECTION_TYPES
 
     def active_connection_name(self) -> str | None:
         return self.active_connection_name_for_device(self.config.client_wifi_interface)
@@ -128,7 +132,7 @@ class NetworkManagerService:
             if not line.strip():
                 continue
             name, _, connection_type = line.partition(":")
-            if connection_type == "wifi" and name != self.config.hotspot_connection_name:
+            if self._is_wifi_connection_type(connection_type) and name != self.config.hotspot_connection_name:
                 return True
         return False
 

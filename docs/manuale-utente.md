@@ -2,7 +2,7 @@
 
 ## Wi-Fi Setup
 
-Versione documento: 1.10
+Versione documento: 1.10.1
 Data: 7 luglio 2026
 
 ## 1. Scopo
@@ -360,6 +360,8 @@ Nella sezione `Reti visibili` premi `Scansiona`.
 Il Raspberry forza una nuova scansione sull'interfaccia `CLIENT_WIFI_INTERFACE` e aggiorna la lista senza ricaricare tutta la pagina. Toccando una rete rilevata, il campo `SSID` viene compilato automaticamente.
 
 Se `HOTSPOT_INTERFACE` e `CLIENT_WIFI_INTERFACE` sono la stessa radio, per esempio `wlan0`, la scansione live puo' vedere solo `Pi-Setup` mentre l'hotspot e' attivo. In questo caso il portale mostra anche `Scansione completa`.
+
+Nota versione: dalla versione `1.10.1` il portale riconosce anche le installazioni in cui `nmcli` indica le connessioni Wi-Fi come `802-11-wireless`. Se vedi solo `Pi-Setup` e non compare `Scansione completa`, verifica che in alto nel portale sia mostrata almeno la versione `1.10.1`.
 
 Quando premi `Scansione completa`:
 

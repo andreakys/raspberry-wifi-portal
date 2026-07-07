@@ -216,6 +216,8 @@ La sezione `Reti visibili` include il pulsante `Scansiona`, che forza una nuova 
 
 Se hotspot e Wi-Fi client usano la stessa interfaccia, ad esempio `wlan0`, la scansione live puo' vedere solo l'hotspot `Pi-Setup` mentre la radio lavora in modalita' access point. In quel caso il portale mostra `Scansione completa`: spegne l'hotspot per pochi secondi, scansiona le reti vicine, riattiva `Pi-Setup` e conserva il risultato. Il telefono deve poi ricollegarsi all'hotspot e aggiornare la pagina.
 
+Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.10.1`: questa release riconosce anche le installazioni in cui `NetworkManager` indica le connessioni Wi-Fi come `802-11-wireless`.
+
 ### 4. Provisioning
 
 Il backend crea una nuova connessione `NetworkManager`, restituisce subito una pagina di attesa e poi prova ad attivare la nuova rete in background. Questo evita che lo smartphone perda il feedback visivo nel momento in cui il Raspberry disattiva l'hotspot.

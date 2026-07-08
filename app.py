@@ -25,6 +25,7 @@ provisioning_state = {
     "message": "Nessuna configurazione in corso.",
     "connection_name": None,
     "connectivity": None,
+    "interface": None,
 }
 recovery_state = {
     "state": "starting",
@@ -157,7 +158,7 @@ def _run_full_wifi_scan_cycle() -> None:
         )
 
 
-def _scan_networks_with_hotspot_paused() -> list[dict[str, str]]:
+def _scan_networks_with_hotspot_paused(wifi_interface: str | None = None) -> list[dict[str, str]]:
     hotspot_was_active = network_manager.hotspot_active()
     try:
         time.sleep(2)
@@ -165,7 +166,7 @@ def _scan_networks_with_hotspot_paused() -> list[dict[str, str]]:
             network_manager.stop_hotspot()
             time.sleep(3)
         network_manager.ensure_wifi_enabled()
-        networks = network_manager.list_networks()
+        networks = network_manager.list_networks(wifi_interface)
         visible_networks = [
             network for network in networks if network.get("ssid") != config.hotspot_ssid
         ]
@@ -273,6 +274,7 @@ def _apply_configuration(payload: dict[str, str]) -> None:
     provisioning_state["message"] = result.message
     provisioning_state["connection_name"] = result.connection_name
     provisioning_state["connectivity"] = result.connectivity
+    provisioning_state["interface"] = result.interface
     _pause_hotspot_recovery(config.hotspot_cooldown_seconds, "post-provisioning")
 
 
@@ -491,6 +493,7 @@ def reboot_system():
         message="Il Raspberry sta eseguendo il riavvio. Attendi circa un minuto prima di ricollegarti al portale.",
         connection_name="Sistema",
         connectivity="reboot",
+        interface=None,
     )
 
 
@@ -530,11 +533,12 @@ def api_status():
 @app.get("/api/networks")
 def api_networks():
     status = network_manager.current_status()
-    scan_limited = _hotspot_blocks_client_scan(status)
+    wifi_interface = request.args.get("wifi_interface", "").strip() or config.client_wifi_interface
+    scan_limited = bool(status.get("hotspot_active")) and status.get("hotspot_interface") == wifi_interface
     if scan_limited and _can_scan_without_losing_page(status):
         try:
             _pause_hotspot_recovery(config.hotspot_cooldown_seconds, "lan-full-scan")
-            networks = _scan_networks_with_hotspot_paused()
+            networks = _scan_networks_with_hotspot_paused(wifi_interface)
             _set_scan_state(
                 state="completed",
                 message=(
@@ -564,7 +568,7 @@ def api_networks():
             return jsonify({"networks": [], "mode": "error", "message": detail}), 500
 
     try:
-        networks = network_manager.list_networks()
+        networks = network_manager.list_networks(wifi_interface)
     except NetworkManagerError:
         networks = []
     return jsonify({"networks": networks, "mode": "live-scan"})
@@ -617,6 +621,7 @@ def configure():
     provisioning_state["message"] = "Il Raspberry sta disattivando l'hotspot temporaneo e sta provando la nuova rete."
     provisioning_state["connection_name"] = None
     provisioning_state["connectivity"] = None
+    provisioning_state["interface"] = payload.get("wifi_interface")
 
     worker = Thread(target=_apply_configuration, args=(payload.copy(),), daemon=True)
     worker.start()
@@ -630,6 +635,7 @@ def configure():
         message=provisioning_state["message"],
         connection_name=None,
         connectivity=None,
+        interface=payload.get("wifi_interface"),
     )
 
 

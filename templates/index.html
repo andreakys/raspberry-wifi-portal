@@ -46,6 +46,10 @@
             <strong>{{ status.active_connection or "Nessuna" }}</strong>
           </article>
           <article>
+            <span class="label">Radio Wi-Fi attiva</span>
+            <strong>{{ status.active_client_interface or "n/d" }}</strong>
+          </article>
+          <article>
             <span class="label">LAN cablata</span>
             <strong>{{ "Presente" if status.lan_connected else "Assente" }}</strong>
           </article>
@@ -204,6 +208,19 @@
             <label>
               <span>SSID</span>
               <input type="text" name="ssid" id="ssid-field" placeholder="Nome rete Wi-Fi" required>
+            </label>
+
+            <label>
+              <span>Interfaccia radio</span>
+              <select name="wifi_interface" id="wifi-interface">
+                {% for interface in status.wifi_interfaces %}
+                <option value="{{ interface.name }}" {% if interface.name == status.client_wifi_interface %}selected{% endif %}>
+                  {{ interface.name }} - {{ interface.state }}{% if interface.connection %} ({{ interface.connection }}){% endif %}
+                </option>
+                {% else %}
+                <option value="">Nessuna interfaccia Wi-Fi rilevata</option>
+                {% endfor %}
+              </select>
             </label>
 
             <label class="checkbox-row">
@@ -378,6 +395,7 @@
       const tlsFields = document.getElementById("tls-fields");
       const enterprisePasswordWrapper = document.getElementById("enterprise-password-wrapper");
       const ssidField = document.getElementById("ssid-field");
+      const wifiInterface = document.getElementById("wifi-interface");
       const ipMode = document.getElementById("ip-mode");
       const staticIpFields = document.getElementById("static-ip-fields");
       const scanButton = document.getElementById("scan-networks-button");
@@ -470,7 +488,8 @@
         scanStatus.textContent = "Scansione reti Wi-Fi in corso...";
 
         try {
-          const response = await fetch("/api/networks", { credentials: "same-origin" });
+          const params = new URLSearchParams({ wifi_interface: wifiInterface.value });
+          const response = await fetch(`/api/networks?${params.toString()}`, { credentials: "same-origin" });
           if (!response.ok) {
             throw new Error("scan-failed");
           }

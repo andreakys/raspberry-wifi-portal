@@ -224,15 +224,15 @@ Per `802.1X` supporta questi profili base:
 - `TTLS`
 - `TLS`
 
-La sezione `Reti visibili` include il pulsante `Scansiona`, che forza una nuova scansione dell'interfaccia Wi-Fi client e aggiorna la lista senza ricaricare tutta la pagina. La lista mostra tutte le celle rilevate da NetworkManager, incluse quelle con segnale debole e piu' access point con lo stesso SSID; quando disponibili vengono mostrati anche canale e BSSID. Se l'elenco e' lungo, il riquadro resta compatto e la lista diventa scorrevole.
+La sezione `Reti visibili` include il pulsante `Scansiona`, che forza una nuova scansione dell'interfaccia radio selezionata nel form `Configura collegamento Wi-Fi` e aggiorna la lista senza ricaricare tutta la pagina. La lista mostra tutte le celle rilevate da NetworkManager, incluse quelle con segnale debole e piu' access point con lo stesso SSID; quando disponibili vengono mostrati anche canale e BSSID. Se l'elenco e' lungo, il riquadro resta compatto e la lista diventa scorrevole.
 
 Se hotspot e Wi-Fi client usano la stessa interfaccia, ad esempio `wlan0`, la scansione live puo' vedere solo l'hotspot `Pi-Setup` mentre la radio lavora in modalita' access point. In quel caso il portale mostra `Scansione completa`: spegne l'hotspot per pochi secondi, scansiona le reti vicine, riattiva `Pi-Setup` e conserva il risultato. Il telefono deve poi ricollegarsi all'hotspot e aggiornare la pagina.
 
 Se accedi dal PC tramite cavo LAN e la LAN e' presente, il pulsante `Scansiona` puo' fare la scansione completa direttamente: spegne l'hotspot per pochi secondi, cerca le reti, riattiva l'hotspot e aggiorna la lista senza perdere la pagina.
 
-Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` in alto: `1` indica solo la radio della scheda, `2` con nomi come `wlan0, wlan1` indica anche un dongle USB. Per separarle imposta `HOTSPOT_INTERFACE=wlan0` e `CLIENT_WIFI_INTERFACE=wlan1` in `/etc/raspberry-wifi-portal/portal.env`.
+Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` in alto: `1` indica solo la radio della scheda, `2` con nomi come `wlan0, wlan1` indica anche un dongle USB. Nel form `Configura collegamento Wi-Fi` puoi scegliere `Interfaccia radio` per decidere su quale radio attivare la connessione finale.
 
-Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.12.5`: questa release aggiunge il pulsante `Mostra` sui campi password, la cancellazione dei profili `setup-*` creati dal portale, mantiene la sezione interfacce/IP subito sotto il riepilogo iniziale e rende scorrevole la lista reti quando e' lunga.
+Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.12.6`: questa release aggiunge la scelta `Interfaccia radio` per la connessione Wi-Fi finale, usa la stessa radio anche per la scansione reti, mantiene il pulsante `Mostra` sui campi password e la cancellazione dei profili `setup-*` creati dal portale.
 
 ### 4. Provisioning
 
@@ -487,7 +487,7 @@ grep -E 'PORTAL_TITLE|APP_VERSION' /etc/raspberry-wifi-portal/portal.env
 sudo systemctl restart raspberry-wifi-portal.service
 ```
 
-Il portale aggiornato mostra un badge `Versione 1.12.5`, il pulsante `Scansiona`, il tasto `Riavvia`, il tasto `Esci`, il pulsante `Mostra` sui campi password, il riquadro `Temperatura scheda`, il riquadro `Interfacce Wi-Fi`, la sezione `Interfacce di rete e indirizzi IP` subito sotto il riepilogo iniziale, la lista reti scorrevole, la sezione `Connessioni salvate dal portale` e la sezione `Scheda accesso` in fondo alla pagina. Se non li vedi, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
+Il portale aggiornato mostra un badge `Versione 1.12.6`, il pulsante `Scansiona`, il tasto `Riavvia`, il tasto `Esci`, il pulsante `Mostra` sui campi password, il campo `Interfaccia radio`, il riquadro `Temperatura scheda`, il riquadro `Interfacce Wi-Fi`, la sezione `Interfacce di rete e indirizzi IP` subito sotto il riepilogo iniziale, la lista reti scorrevole, la sezione `Connessioni salvate dal portale` e la sezione `Scheda accesso` in fondo alla pagina. Se non li vedi, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
 
 ## Aggiornamento
 

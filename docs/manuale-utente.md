@@ -2,7 +2,7 @@
 
 ## Pi Network Manager
 
-Versione documento: 1.12.5
+Versione documento: 1.12.6
 Data: 8 luglio 2026
 
 ## 1. Scopo
@@ -372,7 +372,7 @@ Il pulsante `Riavvia` esegue un reboot del Raspberry tramite `systemctl reboot`.
 
 Nella sezione `Reti visibili` premi `Scansiona`.
 
-Il Raspberry forza una nuova scansione sull'interfaccia `CLIENT_WIFI_INTERFACE` e aggiorna la lista senza ricaricare tutta la pagina. Toccando una rete rilevata, il campo `SSID` viene compilato automaticamente.
+Il Raspberry forza una nuova scansione sull'interfaccia radio selezionata nel form `Configura collegamento Wi-Fi` e aggiorna la lista senza ricaricare tutta la pagina. Toccando una rete rilevata, il campo `SSID` viene compilato automaticamente.
 
 La lista mostra tutte le celle Wi-Fi rilevate da NetworkManager, anche quelle con segnale debole. Se piu' access point trasmettono lo stesso SSID, vengono mostrati separatamente con segnale, canale e BSSID quando disponibili. Quando l'elenco e' lungo, il riquadro resta compatto e puoi scorrere solo la lista delle reti senza perdere il resto della pagina.
 
@@ -380,7 +380,7 @@ Se `HOTSPOT_INTERFACE` e `CLIENT_WIFI_INTERFACE` sono la stessa radio, per esemp
 
 Se accedi al portale da un PC collegato via cavo LAN e la LAN e' presente, il pulsante `Scansiona` puo' fare direttamente una scansione completa: il portale spegne l'hotspot per pochi secondi, cerca le reti e aggiorna la lista restando raggiungibile tramite LAN.
 
-Nota versione: dalla versione `1.12.5` i campi password del login e della configurazione Wi-Fi hanno il pulsante `Mostra`, e la sezione rete permette di eliminare i profili `setup-*` creati dal portale. Dalla versione `1.12.4` il portale mette prima la sezione `Interfacce di rete e indirizzi IP` e rende scorrevole la lista `Reti visibili` quando ci sono molte reti.
+Nota versione: dalla versione `1.12.6` puoi scegliere dal form la radio Wi-Fi su cui attivare la connessione finale, e anche la scansione reti usa quella radio. Dalla versione `1.12.5` i campi password hanno il pulsante `Mostra` e la sezione rete permette di eliminare i profili `setup-*` creati dal portale.
 
 Quando premi `Scansione completa`:
 
@@ -396,11 +396,17 @@ Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce 
 
 ### 7.6 Configura collegamento Wi-Fi
 
-La sezione `Configura collegamento Wi-Fi` raccoglie SSID, tipo di sicurezza e credenziali della rete finale.
+La sezione `Configura collegamento Wi-Fi` raccoglie interfaccia radio, SSID, tipo di sicurezza e credenziali della rete finale.
+
+Nel campo `Interfaccia radio` scegli su quale radio attivare la connessione:
+
+- `wlan0` se vuoi usare la Wi-Fi integrata o se hai una sola radio
+- `wlan1` se hai un dongle USB e vuoi lasciare `wlan0` all'hotspot temporaneo
 
 Per una rete WPA2/WPA3 Personal compila:
 
 - `SSID`
+- `Interfaccia radio`
 - `Password Wi-Fi`
 - `Sicurezza = WPA2/WPA3 Personal`
 
@@ -413,6 +419,7 @@ Poi premi `Salva e connetti`.
 Compila:
 
 - `SSID`
+- `Interfaccia radio`
 - `Sicurezza = WPA2/WPA3 Enterprise (802.1X)`
 - `Metodo EAP`
 - `Identita' utente`
@@ -553,6 +560,7 @@ Verifica nel portale la presenza di:
 - tasto `Esci`
 - riquadro `Temperatura scheda`
 - riquadro `Interfacce Wi-Fi`
+- campo `Interfaccia radio` nella configurazione Wi-Fi
 - sezione `Interfacce di rete e indirizzi IP` subito sotto il riepilogo iniziale
 - lista `Reti visibili` compatta e scorrevole quando ci sono molte reti
 - pulsante `Mostra` sui campi password

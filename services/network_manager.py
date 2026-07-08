@@ -25,6 +25,7 @@ class ConfigureResult:
     message: str
     connection_name: str | None = None
     connectivity: str | None = None
+    interface: str | None = None
 
 
 CONNECTED_CONNECTIVITY_STATES = {"connected", "connected (site only)", "full", "limited", "portal"}
@@ -97,26 +98,48 @@ class NetworkManagerService:
                 return connection or None
         return None
 
-    def device_state(self) -> str:
+    def device_state(self, interface: str | None = None) -> str:
+        target_interface = interface or self.active_client_interface_name() or self.config.client_wifi_interface
         result = self._run_nmcli("-t", "-f", "DEVICE,STATE", "device", "status")
         for line in result.stdout.splitlines():
             parts = line.split(":", 1)
             if len(parts) != 2:
                 continue
             device, state = parts
-            if device == self.config.client_wifi_interface:
+            if device == target_interface:
                 return state.strip().lower() or "unknown"
         return "unknown"
 
     def active_client_connection_name(self) -> str | None:
-        connection_name = self.active_connection_name()
-        if connection_name == self.config.hotspot_connection_name:
-            return None
-        return connection_name
+        client_status = self.active_client_status()
+        return client_status.get("connection")
+
+    def active_client_interface_name(self) -> str | None:
+        client_status = self.active_client_status()
+        return client_status.get("interface")
+
+    def active_client_status(self) -> dict[str, str | None]:
+        result = self._run_nmcli("-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device", "status")
+        fallback: dict[str, str | None] = {"interface": None, "connection": None, "state": None}
+        for line in result.stdout.splitlines():
+            parts = line.split(":", 3)
+            if len(parts) != 4:
+                continue
+            device, device_type, state, connection = parts
+            if device_type != "wifi" or state not in {"connected", "connecting"}:
+                continue
+            if not connection or connection == "--" or connection == self.config.hotspot_connection_name:
+                continue
+            status = {"interface": device, "connection": connection, "state": state}
+            if state == "connected":
+                return status
+            fallback = status
+        return fallback
 
     def current_status(self) -> dict[str, Any]:
         interfaces = self.list_ip_interfaces()
         wifi_interfaces = self._wifi_interfaces(interfaces)
+        active_client_status = self.active_client_status()
         return {
             "wifi_interface": self.config.wifi_interface,
             "hotspot_interface": self.config.hotspot_interface,
@@ -127,9 +150,10 @@ class NetworkManagerService:
             "has_separate_wifi_interfaces": self.config.hotspot_interface != self.config.client_wifi_interface,
             "board_temperature": self.board_temperature(),
             "connectivity": self.connectivity(),
-            "device_state": self.device_state(),
+            "device_state": active_client_status.get("state") or self.device_state(),
             "active_connection": self.active_connection_name(),
-            "active_client_connection": self.active_client_connection_name(),
+            "active_client_connection": active_client_status.get("connection"),
+            "active_client_interface": active_client_status.get("interface"),
             "wifi_client_configured": self.wifi_client_configured(),
             "hotspot_active": self.hotspot_active(),
             "hotspot_ssid": self.config.hotspot_ssid,
@@ -392,7 +416,11 @@ class NetworkManagerService:
 
         return None
 
-    def list_networks(self) -> list[dict[str, str]]:
+    def list_networks(self, wifi_interface: str | None = None) -> list[dict[str, str]]:
+        target_interface = wifi_interface or self.config.client_wifi_interface
+        if target_interface not in self._wifi_device_names():
+            raise NetworkManagerError(f"Interfaccia Wi-Fi non valida: {target_interface}")
+
         result = self._run_nmcli(
             "--mode",
             "multiline",
@@ -402,7 +430,7 @@ class NetworkManagerService:
             "wifi",
             "list",
             "ifname",
-            self.config.client_wifi_interface,
+            target_interface,
             "--rescan",
             "yes",
         )
@@ -499,13 +527,14 @@ class NetworkManagerService:
         if validation_error:
             return ConfigureResult(success=False, message=validation_error)
 
+        target_interface = self._target_wifi_interface(payload)
         connection_name = self._connection_name_for(payload["ssid"])
 
         if self._connection_exists(connection_name):
             self._run_nmcli("connection", "delete", connection_name, check=False)
 
         try:
-            shared_wifi_interface = self.config.hotspot_interface == self.config.client_wifi_interface
+            shared_wifi_interface = self.config.hotspot_interface == target_interface
             if shared_wifi_interface:
                 self.stop_hotspot()
 
@@ -515,7 +544,7 @@ class NetworkManagerService:
                 "type",
                 "wifi",
                 "ifname",
-                self.config.client_wifi_interface,
+                target_interface,
                 "con-name",
                 connection_name,
                 "ssid",
@@ -538,7 +567,7 @@ class NetworkManagerService:
                 "up",
                 connection_name,
                 "ifname",
-                self.config.client_wifi_interface,
+                target_interface,
                 timeout=self.config.connection_wait_seconds,
             )
 
@@ -550,6 +579,7 @@ class NetworkManagerService:
                     message="Connessione Wi-Fi configurata correttamente.",
                     connection_name=connection_name,
                     connectivity=connectivity,
+                    interface=target_interface,
                 )
 
             self.stop_hotspot()
@@ -558,12 +588,13 @@ class NetworkManagerService:
                 message="Connessione attivata, ma la connettivita' Internet e' limitata o richiede un portale.",
                 connection_name=connection_name,
                 connectivity=connectivity,
+                interface=target_interface,
             )
         except NetworkManagerError as error:
             self._run_nmcli("connection", "delete", connection_name, check=False)
             self.ensure_hotspot()
             detail = error.stderr or error.stdout or "Errore sconosciuto di NetworkManager."
-            return ConfigureResult(success=False, message=detail, connection_name=connection_name)
+            return ConfigureResult(success=False, message=detail, connection_name=connection_name, interface=target_interface)
 
     def validate_configuration(self, payload: dict[str, str]) -> str | None:
         return self._validate_payload(payload)
@@ -644,6 +675,10 @@ class NetworkManagerService:
         if not payload.get("ssid", "").strip():
             return "Inserisci l'SSID della rete."
 
+        target_interface = self._target_wifi_interface(payload)
+        if target_interface not in self._wifi_device_names():
+            return "Seleziona una interfaccia Wi-Fi valida."
+
         security_mode = payload.get("security_mode")
         if security_mode not in {"open", "psk", "enterprise"}:
             return "Modalita' di sicurezza non valida."
@@ -671,6 +706,21 @@ class NetworkManagerService:
                 return "Per EAP-TLS serve il percorso della chiave privata."
 
         return None
+
+    def _target_wifi_interface(self, payload: dict[str, str]) -> str:
+        return payload.get("wifi_interface", "").strip() or self.config.client_wifi_interface
+
+    def _wifi_device_names(self) -> set[str]:
+        result = self._run_nmcli("-t", "-f", "DEVICE,TYPE", "device", "status", check=False)
+        names: set[str] = set()
+        for line in result.stdout.splitlines():
+            parts = line.split(":", 1)
+            if len(parts) != 2:
+                continue
+            device, device_type = parts
+            if device and device_type == "wifi":
+                names.add(device)
+        return names
 
     def _connection_exists(self, connection_name: str) -> bool:
         result = self._run_nmcli("-t", "-f", "NAME", "connection", "show", check=False)

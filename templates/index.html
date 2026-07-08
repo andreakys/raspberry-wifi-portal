@@ -217,7 +217,11 @@
             {% for network in networks %}
             <button type="button" class="network-item" data-ssid="{{ network.ssid|e }}">
               <span>{{ network.ssid }}</span>
-              <small>{{ network.security or "Open" }} - segnale {{ network.signal or "?" }}</small>
+              <small>
+                {{ network.security or "Open" }} - segnale {{ network.signal or "?" }}
+                {% if network.chan %} - canale {{ network.chan }}{% endif %}
+                {% if network.bssid %} - {{ network.bssid }}{% endif %}
+              </small>
             </button>
             {% else %}
             <p class="muted">Nessuna rete rilevata al momento.</p>
@@ -394,10 +398,12 @@
           const ssid = escapeHtml(network.ssid || "");
           const security = escapeHtml(network.security || "Open");
           const signal = escapeHtml(network.signal || "?");
+          const channel = network.chan ? ` - canale ${escapeHtml(network.chan)}` : "";
+          const bssid = network.bssid ? ` - ${escapeHtml(network.bssid)}` : "";
           return `
             <button type="button" class="network-item" data-ssid="${ssid}">
               <span>${ssid}</span>
-              <small>${security} - segnale ${signal}</small>
+              <small>${security} - segnale ${signal}${channel}${bssid}</small>
             </button>
           `;
         }).join("");

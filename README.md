@@ -223,7 +223,7 @@ Per `802.1X` supporta questi profili base:
 - `TTLS`
 - `TLS`
 
-La sezione `Reti visibili` include il pulsante `Scansiona`, che forza una nuova scansione dell'interfaccia Wi-Fi client e aggiorna la lista senza ricaricare tutta la pagina.
+La sezione `Reti visibili` include il pulsante `Scansiona`, che forza una nuova scansione dell'interfaccia Wi-Fi client e aggiorna la lista senza ricaricare tutta la pagina. La lista mostra tutte le celle rilevate da NetworkManager, incluse quelle con segnale debole e piu' access point con lo stesso SSID; quando disponibili vengono mostrati anche canale e BSSID.
 
 Se hotspot e Wi-Fi client usano la stessa interfaccia, ad esempio `wlan0`, la scansione live puo' vedere solo l'hotspot `Pi-Setup` mentre la radio lavora in modalita' access point. In quel caso il portale mostra `Scansione completa`: spegne l'hotspot per pochi secondi, scansiona le reti vicine, riattiva `Pi-Setup` e conserva il risultato. Il telefono deve poi ricollegarsi all'hotspot e aggiornare la pagina.
 
@@ -231,7 +231,7 @@ Se accedi dal PC tramite cavo LAN e la LAN e' presente, il pulsante `Scansiona` 
 
 Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` in alto: `1` indica solo la radio della scheda, `2` con nomi come `wlan0, wlan1` indica anche un dongle USB. Per separarle imposta `HOTSPOT_INTERFACE=wlan0` e `CLIENT_WIFI_INTERFACE=wlan1` in `/etc/raspberry-wifi-portal/portal.env`.
 
-Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.12.1`: questa release riconosce anche le installazioni in cui `NetworkManager` indica le connessioni Wi-Fi come `802-11-wireless` e usa le nuove etichette delle sezioni rete.
+Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.12.2`: questa release riconosce anche le installazioni in cui `NetworkManager` indica le connessioni Wi-Fi come `802-11-wireless`, usa le nuove etichette delle sezioni rete e non nasconde reti duplicate/deboli nella scansione.
 
 ### 4. Provisioning
 

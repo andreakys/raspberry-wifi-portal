@@ -324,7 +324,7 @@ class NetworkManagerService:
             "--mode",
             "multiline",
             "--fields",
-            "IN-USE,SSID,SIGNAL,SECURITY",
+            "IN-USE,SSID,BSSID,SIGNAL,SECURITY,CHAN,FREQ",
             "device",
             "wifi",
             "list",
@@ -351,16 +351,16 @@ class NetworkManagerService:
         if current.get("ssid"):
             networks.append(current)
 
-        unique_networks: list[dict[str, str]] = []
-        seen_ssids: set[str] = set()
-        for network in networks:
-            ssid = network.get("ssid", "")
-            if not ssid or ssid in seen_ssids:
-                continue
-            seen_ssids.add(ssid)
-            unique_networks.append(network)
+        visible_networks = [network for network in networks if network.get("ssid", "")]
+        return sorted(
+            visible_networks,
+            key=lambda network: self._network_signal_value(network),
+            reverse=True,
+        )
 
-        return unique_networks
+    def _network_signal_value(self, network: dict[str, str]) -> int:
+        signal = network.get("signal", "").strip()
+        return int(signal) if signal.isdigit() else 0
 
     def ensure_hotspot(self) -> None:
         self.ensure_wifi_enabled()

@@ -2,7 +2,7 @@
 
 ## Pi Network Manager
 
-Versione documento: 1.12.1
+Versione documento: 1.12.2
 Data: 7 luglio 2026
 
 ## 1. Scopo
@@ -374,11 +374,13 @@ Nella sezione `Reti visibili` premi `Scansiona`.
 
 Il Raspberry forza una nuova scansione sull'interfaccia `CLIENT_WIFI_INTERFACE` e aggiorna la lista senza ricaricare tutta la pagina. Toccando una rete rilevata, il campo `SSID` viene compilato automaticamente.
 
+La lista mostra tutte le celle Wi-Fi rilevate da NetworkManager, anche quelle con segnale debole. Se piu' access point trasmettono lo stesso SSID, vengono mostrati separatamente con segnale, canale e BSSID quando disponibili.
+
 Se `HOTSPOT_INTERFACE` e `CLIENT_WIFI_INTERFACE` sono la stessa radio, per esempio `wlan0`, la scansione live puo' vedere solo `Pi-Setup` mentre l'hotspot e' attivo. In questo caso il portale mostra anche `Scansione completa`.
 
 Se accedi al portale da un PC collegato via cavo LAN e la LAN e' presente, il pulsante `Scansiona` puo' fare direttamente una scansione completa: il portale spegne l'hotspot per pochi secondi, cerca le reti e aggiorna la lista restando raggiungibile tramite LAN.
 
-Nota versione: dalla versione `1.12.1` il portale riconosce anche le installazioni in cui `nmcli` indica le connessioni Wi-Fi come `802-11-wireless`, mostra quante interfacce Wi-Fi sono rilevate, distingue la scansione da LAN cablata e usa le nuove etichette delle sezioni rete.
+Nota versione: dalla versione `1.12.2` il portale riconosce anche le installazioni in cui `nmcli` indica le connessioni Wi-Fi come `802-11-wireless`, mostra quante interfacce Wi-Fi sono rilevate, distingue la scansione da LAN cablata, usa le nuove etichette delle sezioni rete e non nasconde reti duplicate/deboli nella scansione.
 
 Quando premi `Scansione completa`:
 

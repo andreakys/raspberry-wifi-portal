@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-APP_VERSION = "1.12.2"
+APP_VERSION = "1.12.3"
 DEFAULT_PORTAL_TITLE = "Pi Network Manager"
 
 

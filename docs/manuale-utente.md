@@ -2,7 +2,7 @@
 
 ## Pi Network Manager
 
-Versione documento: 1.12.2
+Versione documento: 1.12.3
 Data: 7 luglio 2026
 
 ## 1. Scopo
@@ -380,7 +380,7 @@ Se `HOTSPOT_INTERFACE` e `CLIENT_WIFI_INTERFACE` sono la stessa radio, per esemp
 
 Se accedi al portale da un PC collegato via cavo LAN e la LAN e' presente, il pulsante `Scansiona` puo' fare direttamente una scansione completa: il portale spegne l'hotspot per pochi secondi, cerca le reti e aggiorna la lista restando raggiungibile tramite LAN.
 
-Nota versione: dalla versione `1.12.2` il portale riconosce anche le installazioni in cui `nmcli` indica le connessioni Wi-Fi come `802-11-wireless`, mostra quante interfacce Wi-Fi sono rilevate, distingue la scansione da LAN cablata, usa le nuove etichette delle sezioni rete e non nasconde reti duplicate/deboli nella scansione.
+Nota versione: dalla versione `1.12.3` il portale riconosce anche le installazioni in cui `nmcli` indica le connessioni Wi-Fi come `802-11-wireless`, mostra quante interfacce Wi-Fi sono rilevate, distingue la scansione da LAN cablata e gestisce correttamente anche output `nmcli` senza righe vuote tra reti diverse.
 
 Quando premi `Scansione completa`:
 

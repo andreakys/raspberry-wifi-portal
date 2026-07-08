@@ -346,7 +346,12 @@ class NetworkManagerService:
                 continue
 
             key, _, value = line.partition(":")
-            current[key.strip().lower().replace("-", "_")] = value.strip()
+            normalized_key = key.strip().lower().replace("-", "_")
+            if normalized_key == "in_use" and current:
+                if current.get("ssid"):
+                    networks.append(current)
+                current = {}
+            current[normalized_key] = value.strip()
 
         if current.get("ssid"):
             networks.append(current)

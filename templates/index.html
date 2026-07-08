@@ -162,6 +162,31 @@
 
           <button type="submit" class="primary-button">Applica configurazione IP</button>
         </form>
+
+        <div class="managed-connections">
+          <h3>Connessioni salvate dal portale</h3>
+          <p class="muted">Elimina profili Wi-Fi o LAN creati dal portale per ricrearli da zero.</p>
+          <div class="connection-list">
+            {% for connection in status.managed_connections %}
+            <article class="connection-item">
+              <div>
+                <strong>{{ connection.name }}</strong>
+                <small>
+                  {{ connection.type }}
+                  {% if connection.device %} - in uso su {{ connection.device }}{% endif %}
+                  {% if connection.autoconnect %} - autoconnect {{ connection.autoconnect }}{% endif %}
+                </small>
+              </div>
+              <form method="post" action="/network/connections/delete" onsubmit="return confirm('Eliminare questa connessione salvata? Se risulta in uso, il collegamento potrebbe cadere.');">
+                <input type="hidden" name="connection_name" value="{{ connection.name }}">
+                <button type="submit" class="secondary-button danger-button">Elimina</button>
+              </form>
+            </article>
+            {% else %}
+            <p class="muted">Nessuna connessione Wi-Fi o LAN creata dal portale.</p>
+            {% endfor %}
+          </div>
+        </div>
       </section>
 
       <section class="content-grid">
@@ -198,7 +223,10 @@
             <div id="psk-fields">
               <label>
                 <span>Password Wi-Fi</span>
-                <input type="password" name="psk_password" id="password-field" placeholder="Password rete">
+                <div class="password-field">
+                  <input type="password" name="psk_password" id="password-field" placeholder="Password rete">
+                  <button type="button" class="password-toggle" data-password-toggle="password-field">Mostra</button>
+                </div>
               </label>
             </div>
 
@@ -224,7 +252,10 @@
 
               <label id="enterprise-password-wrapper">
                 <span>Password enterprise</span>
-                <input type="password" name="enterprise_password" id="enterprise-password-field" placeholder="Password 802.1X">
+                <div class="password-field">
+                  <input type="password" name="enterprise_password" id="enterprise-password-field" placeholder="Password 802.1X">
+                  <button type="button" class="password-toggle" data-password-toggle="enterprise-password-field">Mostra</button>
+                </div>
               </label>
 
               <label>
@@ -259,7 +290,10 @@
 
                 <label>
                   <span>Private key password</span>
-                  <input type="password" name="private_key_password" placeholder="Opzionale">
+                  <div class="password-field">
+                    <input type="password" name="private_key_password" id="private-key-password-field" placeholder="Opzionale">
+                    <button type="button" class="password-toggle" data-password-toggle="private-key-password-field">Mostra</button>
+                  </div>
                 </label>
               </div>
             </div>
@@ -351,6 +385,19 @@
       const scanStatus = document.getElementById("scan-status");
       const networkCount = document.getElementById("network-count");
       const networkList = document.getElementById("network-list");
+
+      function bindPasswordToggles() {
+        document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const input = document.getElementById(button.dataset.passwordToggle);
+            const visible = input.type === "text";
+            input.type = visible ? "password" : "text";
+            button.textContent = visible ? "Mostra" : "Nascondi";
+          });
+        });
+      }
+
+      bindPasswordToggles();
 
       function syncVisibility() {
         const mode = securityMode.value;

@@ -196,6 +196,7 @@ http://192.168.4.1
 ```
 
 Il portale richiede la password amministrativa `PORTAL_PASSWORD`. Se non viene indicata durante l'installazione, `install.sh` ne genera una sicura e la stampa a fine procedura.
+Nel login e nei campi password Wi-Fi/802.1X e' disponibile il pulsante `Mostra`, utile per controllare la password prima di inviarla.
 
 Dopo il login, la sezione `Scheda accesso` permette di aprire una pagina stampabile:
 
@@ -231,7 +232,7 @@ Se accedi dal PC tramite cavo LAN e la LAN e' presente, il pulsante `Scansiona` 
 
 Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` in alto: `1` indica solo la radio della scheda, `2` con nomi come `wlan0, wlan1` indica anche un dongle USB. Per separarle imposta `HOTSPOT_INTERFACE=wlan0` e `CLIENT_WIFI_INTERFACE=wlan1` in `/etc/raspberry-wifi-portal/portal.env`.
 
-Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.12.4`: questa release mantiene la sezione interfacce/IP subito sotto il riepilogo iniziale, rende scorrevole la lista reti quando e' lunga e conserva le correzioni `1.12.3` per le installazioni in cui `NetworkManager` indica le connessioni Wi-Fi come `802-11-wireless` o produce output `nmcli` senza righe vuote tra reti diverse.
+Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.12.5`: questa release aggiunge il pulsante `Mostra` sui campi password, la cancellazione dei profili `setup-*` creati dal portale, mantiene la sezione interfacce/IP subito sotto il riepilogo iniziale e rende scorrevole la lista reti quando e' lunga.
 
 ### 4. Provisioning
 
@@ -391,6 +392,8 @@ Il pulsante di conferma e' `Applica configurazione IP`.
 
 Per evitare di perdere l'accesso al portale durante il setup, l'interfaccia che sta servendo l'hotspot temporaneo viene mostrata ma non puo' essere modificata finche' l'hotspot e' attivo. La configurazione e' pensata soprattutto per la LAN cablata, ad esempio `eth0`.
 
+La sottosezione `Connessioni salvate dal portale` permette di eliminare profili Wi-Fi o LAN creati dal portale, cioe' quelli con nome `setup-*`, per poi ricrearli da zero. I profili di sistema non creati dal portale, ad esempio `netplan-*`, non vengono proposti per la cancellazione.
+
 ## Dipendenze
 
 ### Sistema
@@ -484,7 +487,7 @@ grep -E 'PORTAL_TITLE|APP_VERSION' /etc/raspberry-wifi-portal/portal.env
 sudo systemctl restart raspberry-wifi-portal.service
 ```
 
-Il portale aggiornato mostra un badge `Versione 1.12.4`, il pulsante `Scansiona`, il tasto `Riavvia`, il tasto `Esci`, il riquadro `Temperatura scheda`, il riquadro `Interfacce Wi-Fi`, la sezione `Interfacce di rete e indirizzi IP` subito sotto il riepilogo iniziale, la lista reti scorrevole e la sezione `Scheda accesso` in fondo alla pagina. Se non li vedi, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
+Il portale aggiornato mostra un badge `Versione 1.12.5`, il pulsante `Scansiona`, il tasto `Riavvia`, il tasto `Esci`, il pulsante `Mostra` sui campi password, il riquadro `Temperatura scheda`, il riquadro `Interfacce Wi-Fi`, la sezione `Interfacce di rete e indirizzi IP` subito sotto il riepilogo iniziale, la lista reti scorrevole, la sezione `Connessioni salvate dal portale` e la sezione `Scheda accesso` in fondo alla pagina. Se non li vedi, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
 
 ## Aggiornamento
 

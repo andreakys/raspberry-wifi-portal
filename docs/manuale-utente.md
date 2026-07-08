@@ -2,7 +2,7 @@
 
 ## Pi Network Manager
 
-Versione documento: 1.12.4
+Versione documento: 1.12.5
 Data: 8 luglio 2026
 
 ## 1. Scopo
@@ -330,7 +330,7 @@ Apri il browser e digita:
 http://192.168.4.1
 ```
 
-Il portale mostra prima la pagina di accesso. Inserisci la password `PORTAL_PASSWORD`.
+Il portale mostra prima la pagina di accesso. Inserisci la password `PORTAL_PASSWORD`. Usa il pulsante `Mostra` se vuoi controllare la password digitata prima di entrare.
 In alto viene mostrata anche la versione applicazione: usala per verificare che il Raspberry stia eseguendo davvero l'ultima release installata.
 
 Se hai usato l'installazione guidata e hai lasciato vuota la password portale, lo script ne ha generata una automaticamente e l'ha stampata alla fine dell'installazione. La puoi ritrovare o cambiare in:
@@ -380,7 +380,7 @@ Se `HOTSPOT_INTERFACE` e `CLIENT_WIFI_INTERFACE` sono la stessa radio, per esemp
 
 Se accedi al portale da un PC collegato via cavo LAN e la LAN e' presente, il pulsante `Scansiona` puo' fare direttamente una scansione completa: il portale spegne l'hotspot per pochi secondi, cerca le reti e aggiorna la lista restando raggiungibile tramite LAN.
 
-Nota versione: dalla versione `1.12.4` il portale mette prima la sezione `Interfacce di rete e indirizzi IP` e rende scorrevole la lista `Reti visibili` quando ci sono molte reti. Dalla versione `1.12.3` riconosce anche le installazioni in cui `nmcli` indica le connessioni Wi-Fi come `802-11-wireless`, mostra quante interfacce Wi-Fi sono rilevate, distingue la scansione da LAN cablata e gestisce correttamente anche output `nmcli` senza righe vuote tra reti diverse.
+Nota versione: dalla versione `1.12.5` i campi password del login e della configurazione Wi-Fi hanno il pulsante `Mostra`, e la sezione rete permette di eliminare i profili `setup-*` creati dal portale. Dalla versione `1.12.4` il portale mette prima la sezione `Interfacce di rete e indirizzi IP` e rende scorrevole la lista `Reti visibili` quando ci sono molte reti.
 
 Quando premi `Scansione completa`:
 
@@ -404,6 +404,8 @@ Per una rete WPA2/WPA3 Personal compila:
 - `Password Wi-Fi`
 - `Sicurezza = WPA2/WPA3 Personal`
 
+Puoi premere `Mostra` accanto alla password per verificare eventuali errori di battitura.
+
 Poi premi `Salva e connetti`.
 
 ### 7.7 Configurazione di una rete aziendale 802.1X
@@ -423,6 +425,16 @@ Per `TLS` servono anche:
 - `Client certificate`
 - `Private key`
 - facoltativamente `Private key password`
+
+Anche i campi password 802.1X hanno il pulsante `Mostra` per controllare cosa hai digitato.
+
+### 7.8 Connessioni salvate dal portale
+
+Nella sezione `Interfacce di rete e indirizzi IP` trovi anche `Connessioni salvate dal portale`.
+
+Qui puoi eliminare profili Wi-Fi o LAN creati dal portale, cioe' quelli con nome `setup-*`, per poi ricrearli con nuovi parametri.
+
+Per sicurezza il portale non mostra come eliminabili i profili di sistema non creati da lui, ad esempio profili `netplan-*`, e non permette di cancellare la connessione hotspot temporanea.
 
 ## 8. Cosa succede quando si preme "Salva e connetti"
 
@@ -543,6 +555,8 @@ Verifica nel portale la presenza di:
 - riquadro `Interfacce Wi-Fi`
 - sezione `Interfacce di rete e indirizzi IP` subito sotto il riepilogo iniziale
 - lista `Reti visibili` compatta e scorrevole quando ci sono molte reti
+- pulsante `Mostra` sui campi password
+- sezione `Connessioni salvate dal portale`
 - sezione `Scheda accesso` in fondo alla pagina
 
 ## 12. Pubblicazione su GitHub

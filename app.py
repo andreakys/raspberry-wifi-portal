@@ -668,6 +668,18 @@ def configure_network_ipv4():
     return _render_index(network_message=message)
 
 
+@app.post("/network/connections/delete")
+def delete_network_connection():
+    connection_name = request.form.get("connection_name", "").strip()
+    try:
+        network_manager.delete_managed_connection(connection_name)
+    except NetworkManagerError as error:
+        detail = error.stderr or error.stdout or str(error)
+        return _render_index(network_error=detail, status_code=400)
+
+    return _render_index(network_message=f"Connessione eliminata: {connection_name}.")
+
+
 if __name__ == "__main__":
     _bootstrap_network_manager()
     _start_background_threads()

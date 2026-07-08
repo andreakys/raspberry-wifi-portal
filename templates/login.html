@@ -28,11 +28,24 @@
           <input type="hidden" name="next" value="{{ next_url }}">
           <label>
             <span>Password portale</span>
-            <input type="password" name="portal_password" placeholder="Password amministratore" autocomplete="current-password" required autofocus>
+            <div class="password-field">
+              <input type="password" name="portal_password" id="portal-password" placeholder="Password amministratore" autocomplete="current-password" required autofocus>
+              <button type="button" class="password-toggle" data-password-toggle="portal-password">Mostra</button>
+            </div>
           </label>
           <button type="submit" class="primary-button">Entra</button>
         </form>
       </section>
     </main>
+    <script>
+      document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const input = document.getElementById(button.dataset.passwordToggle);
+          const visible = input.type === "text";
+          input.type = visible ? "password" : "text";
+          button.textContent = visible ? "Mostra" : "Nascondi";
+        });
+      });
+    </script>
   </body>
 </html>

@@ -32,6 +32,8 @@ CONNECTING_DEVICE_STATES = {"prepare", "config", "ip-config", "ip-check", "secon
 CONNECTED_DEVICE_STATES = {"connected", "activated"}
 DISCONNECTED_DEVICE_STATES = {"disconnected", "unavailable", "failed", "deactivating"}
 WIFI_CONNECTION_TYPES = {"wifi", "802-11-wireless", "wireless"}
+ETHERNET_CONNECTION_TYPES = {"ethernet", "802-3-ethernet", "wired"}
+MANAGED_CONNECTION_PREFIX = "setup-"
 
 
 class NetworkManagerService:
@@ -76,6 +78,10 @@ class NetworkManagerService:
 
     def _is_wifi_connection_type(self, connection_type: str) -> bool:
         return connection_type.strip().lower() in WIFI_CONNECTION_TYPES
+
+    def _is_network_connection_type(self, connection_type: str) -> bool:
+        normalized_type = connection_type.strip().lower()
+        return normalized_type in WIFI_CONNECTION_TYPES or normalized_type in ETHERNET_CONNECTION_TYPES
 
     def active_connection_name(self) -> str | None:
         return self.active_connection_name_for_device(self.config.client_wifi_interface)
@@ -131,6 +137,7 @@ class NetworkManagerService:
             "lan_connected": self._lan_connected(interfaces),
             "lan_interfaces": self._lan_interfaces(interfaces),
             "interfaces": interfaces,
+            "managed_connections": self.list_managed_connections(),
         }
 
     def wifi_client_configured(self) -> bool:
@@ -142,6 +149,72 @@ class NetworkManagerService:
             if self._is_wifi_connection_type(connection_type) and name != self.config.hotspot_connection_name:
                 return True
         return False
+
+    def list_managed_connections(self) -> list[dict[str, Any]]:
+        result = self._run_nmcli(
+            "--mode",
+            "multiline",
+            "--fields",
+            "NAME,UUID,TYPE,DEVICE,AUTOCONNECT",
+            "connection",
+            "show",
+            check=False,
+        )
+        connections: list[dict[str, Any]] = []
+        current: dict[str, str] = {}
+
+        for raw_line in result.stdout.splitlines():
+            line = raw_line.strip()
+            if not line:
+                if current:
+                    self._append_managed_connection(connections, current)
+                current = {}
+                continue
+
+            key, _, value = line.partition(":")
+            normalized_key = key.strip().lower().replace("-", "_")
+            if normalized_key == "name" and current:
+                self._append_managed_connection(connections, current)
+                current = {}
+            current[normalized_key] = value.strip()
+
+        if current:
+            self._append_managed_connection(connections, current)
+
+        return sorted(connections, key=lambda item: (item["type"], item["name"].lower()))
+
+    def _append_managed_connection(self, connections: list[dict[str, Any]], raw_connection: dict[str, str]) -> None:
+        name = raw_connection.get("name", "")
+        connection_type = raw_connection.get("type", "")
+        if not name or not self._is_network_connection_type(connection_type):
+            return
+
+        is_portal_managed = name.startswith(MANAGED_CONNECTION_PREFIX)
+        is_hotspot = name == self.config.hotspot_connection_name
+        if not is_portal_managed or is_hotspot:
+            return
+
+        device = raw_connection.get("device", "")
+        connections.append(
+            {
+                "name": name,
+                "uuid": raw_connection.get("uuid", ""),
+                "type": connection_type,
+                "device": "" if device == "--" else device,
+                "autoconnect": raw_connection.get("autoconnect", ""),
+                "deletable": True,
+            }
+        )
+
+    def delete_managed_connection(self, connection_name: str) -> None:
+        normalized_name = connection_name.strip()
+        managed_connections = {item["name"] for item in self.list_managed_connections()}
+        if normalized_name not in managed_connections:
+            raise NetworkManagerError("La connessione selezionata non e' un profilo creato dal portale.")
+        if normalized_name == self.config.hotspot_connection_name:
+            raise NetworkManagerError("La connessione hotspot temporanea non puo' essere eliminata.")
+
+        self._run_nmcli("connection", "delete", normalized_name)
 
     def board_temperature(self) -> dict[str, Any]:
         celsius = self._read_board_temperature_celsius()

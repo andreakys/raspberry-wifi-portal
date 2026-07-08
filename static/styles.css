@@ -217,6 +217,24 @@ select:focus {
   border-color: var(--accent);
 }
 
+.password-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.password-toggle {
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--accent-strong);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .checkbox-row {
   display: flex;
   align-items: center;
@@ -236,6 +254,7 @@ select:focus {
 .primary-button,
 .secondary-button,
 .utility-button,
+.password-toggle,
 .network-item {
   border: 0;
   cursor: pointer;
@@ -403,6 +422,48 @@ select:focus {
   overflow-wrap: anywhere;
 }
 
+.managed-connections {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.managed-connections .muted {
+  margin: 8px 0 0;
+}
+
+.connection-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.connection-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+
+.connection-item form {
+  margin: 0;
+}
+
+.connection-item strong,
+.connection-item small {
+  display: block;
+}
+
+.connection-item small {
+  margin-top: 4px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
 .full-row {
   grid-column: 1 / -1;
   margin: 0;
@@ -507,9 +568,21 @@ select:focus {
     align-items: stretch;
     flex-direction: column;
   }
+
+  .connection-item {
+    grid-template-columns: 1fr;
+  }
+
+  .connection-item .secondary-button {
+    width: 100%;
+  }
 }
 
 @media (max-width: 520px) {
+  .password-field {
+    grid-template-columns: 1fr;
+  }
+
   .print-grid {
     grid-template-columns: 1fr;
   }

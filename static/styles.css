@@ -124,6 +124,7 @@ h3 {
   display: grid;
   grid-template-columns: 1.3fr 0.9fr;
   gap: 24px;
+  margin-top: 24px;
 }
 
 .panel {
@@ -294,14 +295,18 @@ select:focus {
 
 .network-list {
   display: grid;
-  gap: 12px;
-  margin-top: 20px;
+  gap: 10px;
+  max-height: clamp(360px, 54vh, 680px);
+  margin-top: 12px;
+  padding-right: 6px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .network-item {
   text-align: left;
-  padding: 14px 16px;
-  border-radius: 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
   background: #fff;
   border: 1px solid var(--line);
 }
@@ -314,6 +319,15 @@ select:focus {
 .network-item small,
 .muted {
   color: var(--muted);
+}
+
+.network-item small {
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.network-count {
+  margin: 8px 0 0;
 }
 
 .scan-status {

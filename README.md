@@ -223,7 +223,7 @@ Per `802.1X` supporta questi profili base:
 - `TTLS`
 - `TLS`
 
-La sezione `Reti visibili` include il pulsante `Scansiona`, che forza una nuova scansione dell'interfaccia Wi-Fi client e aggiorna la lista senza ricaricare tutta la pagina. La lista mostra tutte le celle rilevate da NetworkManager, incluse quelle con segnale debole e piu' access point con lo stesso SSID; quando disponibili vengono mostrati anche canale e BSSID.
+La sezione `Reti visibili` include il pulsante `Scansiona`, che forza una nuova scansione dell'interfaccia Wi-Fi client e aggiorna la lista senza ricaricare tutta la pagina. La lista mostra tutte le celle rilevate da NetworkManager, incluse quelle con segnale debole e piu' access point con lo stesso SSID; quando disponibili vengono mostrati anche canale e BSSID. Se l'elenco e' lungo, il riquadro resta compatto e la lista diventa scorrevole.
 
 Se hotspot e Wi-Fi client usano la stessa interfaccia, ad esempio `wlan0`, la scansione live puo' vedere solo l'hotspot `Pi-Setup` mentre la radio lavora in modalita' access point. In quel caso il portale mostra `Scansione completa`: spegne l'hotspot per pochi secondi, scansiona le reti vicine, riattiva `Pi-Setup` e conserva il risultato. Il telefono deve poi ricollegarsi all'hotspot e aggiornare la pagina.
 
@@ -231,7 +231,7 @@ Se accedi dal PC tramite cavo LAN e la LAN e' presente, il pulsante `Scansiona` 
 
 Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` in alto: `1` indica solo la radio della scheda, `2` con nomi come `wlan0, wlan1` indica anche un dongle USB. Per separarle imposta `HOTSPOT_INTERFACE=wlan0` e `CLIENT_WIFI_INTERFACE=wlan1` in `/etc/raspberry-wifi-portal/portal.env`.
 
-Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.12.3`: questa release riconosce anche le installazioni in cui `NetworkManager` indica le connessioni Wi-Fi come `802-11-wireless`, usa le nuove etichette delle sezioni rete e gestisce correttamente anche output `nmcli` senza righe vuote tra reti diverse.
+Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.12.4`: questa release mantiene la sezione interfacce/IP subito sotto il riepilogo iniziale, rende scorrevole la lista reti quando e' lunga e conserva le correzioni `1.12.3` per le installazioni in cui `NetworkManager` indica le connessioni Wi-Fi come `802-11-wireless` o produce output `nmcli` senza righe vuote tra reti diverse.
 
 ### 4. Provisioning
 
@@ -370,7 +370,7 @@ Puoi sostituire `balanced` con `stable` oppure `unstable`.
 
 ## Interfacce di rete e indirizzi IP
 
-Se il Raspberry e' collegato anche con cavo Ethernet, il portale mostra nella sezione `Interfacce di rete e indirizzi IP`:
+Subito sotto il riepilogo iniziale, il portale mostra la sezione `Interfacce di rete e indirizzi IP`. Se il Raspberry e' collegato anche con cavo Ethernet, qui trovi:
 
 - nome interfaccia, ad esempio `eth0` o `wlan0`
 - tipo e stato
@@ -484,7 +484,7 @@ grep -E 'PORTAL_TITLE|APP_VERSION' /etc/raspberry-wifi-portal/portal.env
 sudo systemctl restart raspberry-wifi-portal.service
 ```
 
-Il portale aggiornato mostra un badge `Versione ...`, il pulsante `Scansiona`, il tasto `Riavvia`, il tasto `Esci`, il riquadro `Temperatura scheda`, il riquadro `Interfacce Wi-Fi` e la sezione `Scheda accesso` in fondo alla pagina. Se non li vedi, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
+Il portale aggiornato mostra un badge `Versione 1.12.4`, il pulsante `Scansiona`, il tasto `Riavvia`, il tasto `Esci`, il riquadro `Temperatura scheda`, il riquadro `Interfacce Wi-Fi`, la sezione `Interfacce di rete e indirizzi IP` subito sotto il riepilogo iniziale, la lista reti scorrevole e la sezione `Scheda accesso` in fondo alla pagina. Se non li vedi, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
 
 ## Aggiornamento
 

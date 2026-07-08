@@ -2,8 +2,8 @@
 
 ## Pi Network Manager
 
-Versione documento: 1.12.3
-Data: 7 luglio 2026
+Versione documento: 1.12.4
+Data: 8 luglio 2026
 
 ## 1. Scopo
 
@@ -286,7 +286,7 @@ Uso consigliato:
 
 ### 6.7 Interfacce di rete e indirizzi IP
 
-Se il Raspberry e' collegato anche con cavo Ethernet, il portale mostra una sezione `Interfacce di rete e indirizzi IP`.
+Subito sotto il riepilogo iniziale, il portale mostra la sezione `Interfacce di rete e indirizzi IP`. In questo modo puoi controllare prima LAN, gateway, DNS e metodo IPv4, poi configurare il collegamento Wi-Fi.
 
 Per ogni interfaccia vengono mostrati:
 
@@ -360,7 +360,7 @@ Flusso consigliato:
 3. Stampa la pagina oppure scegli `Salva come PDF` nel browser.
 4. Usa la scheda per collegarti all'hotspot e aprire il portale.
 
-La scheda accesso si trova in fondo alla pagina principale, dopo le sezioni `Configura collegamento Wi-Fi` e `Interfacce di rete e indirizzi IP`.
+La scheda accesso si trova in fondo alla pagina principale, dopo le sezioni operative di rete e Wi-Fi.
 
 ### 7.4 Temperatura e riavvio
 
@@ -374,13 +374,13 @@ Nella sezione `Reti visibili` premi `Scansiona`.
 
 Il Raspberry forza una nuova scansione sull'interfaccia `CLIENT_WIFI_INTERFACE` e aggiorna la lista senza ricaricare tutta la pagina. Toccando una rete rilevata, il campo `SSID` viene compilato automaticamente.
 
-La lista mostra tutte le celle Wi-Fi rilevate da NetworkManager, anche quelle con segnale debole. Se piu' access point trasmettono lo stesso SSID, vengono mostrati separatamente con segnale, canale e BSSID quando disponibili.
+La lista mostra tutte le celle Wi-Fi rilevate da NetworkManager, anche quelle con segnale debole. Se piu' access point trasmettono lo stesso SSID, vengono mostrati separatamente con segnale, canale e BSSID quando disponibili. Quando l'elenco e' lungo, il riquadro resta compatto e puoi scorrere solo la lista delle reti senza perdere il resto della pagina.
 
 Se `HOTSPOT_INTERFACE` e `CLIENT_WIFI_INTERFACE` sono la stessa radio, per esempio `wlan0`, la scansione live puo' vedere solo `Pi-Setup` mentre l'hotspot e' attivo. In questo caso il portale mostra anche `Scansione completa`.
 
 Se accedi al portale da un PC collegato via cavo LAN e la LAN e' presente, il pulsante `Scansiona` puo' fare direttamente una scansione completa: il portale spegne l'hotspot per pochi secondi, cerca le reti e aggiorna la lista restando raggiungibile tramite LAN.
 
-Nota versione: dalla versione `1.12.3` il portale riconosce anche le installazioni in cui `nmcli` indica le connessioni Wi-Fi come `802-11-wireless`, mostra quante interfacce Wi-Fi sono rilevate, distingue la scansione da LAN cablata e gestisce correttamente anche output `nmcli` senza righe vuote tra reti diverse.
+Nota versione: dalla versione `1.12.4` il portale mette prima la sezione `Interfacce di rete e indirizzi IP` e rende scorrevole la lista `Reti visibili` quando ci sono molte reti. Dalla versione `1.12.3` riconosce anche le installazioni in cui `nmcli` indica le connessioni Wi-Fi come `802-11-wireless`, mostra quante interfacce Wi-Fi sono rilevate, distingue la scansione da LAN cablata e gestisce correttamente anche output `nmcli` senza righe vuote tra reti diverse.
 
 Quando premi `Scansione completa`:
 
@@ -541,6 +541,8 @@ Verifica nel portale la presenza di:
 - tasto `Esci`
 - riquadro `Temperatura scheda`
 - riquadro `Interfacce Wi-Fi`
+- sezione `Interfacce di rete e indirizzi IP` subito sotto il riepilogo iniziale
+- lista `Reti visibili` compatta e scorrevole quando ci sono molte reti
 - sezione `Scheda accesso` in fondo alla pagina
 
 ## 12. Pubblicazione su GitHub

@@ -72,6 +72,98 @@
         </div>
       </section>
 
+      <section class="panel network-panel">
+        <div class="panel-header">
+          <h2>Interfacce di rete e indirizzi IP</h2>
+          <p>Stato delle interfacce e modifica indirizzo IP per LAN o profili non usati dall'hotspot.</p>
+        </div>
+
+        {% if network_message %}
+        <div class="message success">{{ network_message }}</div>
+        {% endif %}
+
+        {% if network_error %}
+        <div class="message error">{{ network_error }}</div>
+        {% endif %}
+
+        <div class="interface-list">
+          {% for interface in status.interfaces %}
+          <article class="interface-item">
+            <div>
+              <strong>{{ interface.name }}</strong>
+              <small>{{ interface.type }} - {{ interface.state }}</small>
+            </div>
+            <div>
+              <span class="label">Connessione</span>
+              <span>{{ interface.connection or "Nessuna" }}</span>
+            </div>
+            <div>
+              <span class="label">IPv4</span>
+              <span>{{ interface.ipv4_addresses|join(", ") or "n/d" }}</span>
+            </div>
+            <div>
+              <span class="label">Gateway</span>
+              <span>{{ interface.gateway or "n/d" }}</span>
+            </div>
+            <div>
+              <span class="label">DNS</span>
+              <span>{{ interface.dns|join(", ") or "n/d" }}</span>
+            </div>
+            <div>
+              <span class="label">Metodo</span>
+              <span>{{ interface.ipv4_method or "n/d" }}</span>
+            </div>
+            {% if not interface.configurable %}
+            <p class="muted full-row">Interfaccia protetta mentre l'hotspot e' attivo.</p>
+            {% endif %}
+          </article>
+          {% else %}
+          <p class="muted">Nessuna interfaccia ethernet o Wi-Fi rilevata.</p>
+          {% endfor %}
+        </div>
+
+        <form method="post" action="/network/ipv4" class="setup-form ip-form" id="ip-form">
+          <h3>Modifica indirizzo IP</h3>
+          <label>
+            <span>Interfaccia</span>
+            <select name="interface" id="ip-interface" required>
+              {% for interface in status.interfaces %}
+              <option value="{{ interface.name }}" {% if not interface.configurable %}disabled{% endif %}>
+                {{ interface.name }} - {{ interface.type }}{% if not interface.configurable %} (hotspot attivo){% endif %}
+              </option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label>
+            <span>Modalita' IPv4</span>
+            <select name="ip_mode" id="ip-mode">
+              <option value="dhcp">DHCP automatico</option>
+              <option value="static">Indirizzo statico</option>
+            </select>
+          </label>
+
+          <div id="static-ip-fields" class="stacked hidden">
+            <label>
+              <span>Indirizzo IPv4</span>
+              <input type="text" name="ip_address" placeholder="192.168.1.50/24">
+            </label>
+
+            <label>
+              <span>Gateway</span>
+              <input type="text" name="gateway" placeholder="192.168.1.1">
+            </label>
+
+            <label>
+              <span>DNS</span>
+              <input type="text" name="dns" placeholder="1.1.1.1, 8.8.8.8">
+            </label>
+          </div>
+
+          <button type="submit" class="primary-button">Applica configurazione IP</button>
+        </form>
+      </section>
+
       <section class="content-grid">
         <article class="panel">
           <div class="panel-header">
@@ -212,6 +304,9 @@
           {% endif %}
 
           <p class="scan-status muted" id="scan-status" role="status" aria-live="polite"></p>
+          <p class="network-count muted" id="network-count">
+            {{ networks|length }} {% if networks|length == 1 %}rete rilevata{% else %}reti rilevate{% endif %}
+          </p>
 
           <div class="network-list" id="network-list">
             {% for network in networks %}
@@ -228,98 +323,6 @@
             {% endfor %}
           </div>
         </aside>
-      </section>
-
-      <section class="panel network-panel">
-        <div class="panel-header">
-          <h2>Interfacce di rete e indirizzi IP</h2>
-          <p>Stato delle interfacce e modifica indirizzo IP per LAN o profili non usati dall'hotspot.</p>
-        </div>
-
-        {% if network_message %}
-        <div class="message success">{{ network_message }}</div>
-        {% endif %}
-
-        {% if network_error %}
-        <div class="message error">{{ network_error }}</div>
-        {% endif %}
-
-        <div class="interface-list">
-          {% for interface in status.interfaces %}
-          <article class="interface-item">
-            <div>
-              <strong>{{ interface.name }}</strong>
-              <small>{{ interface.type }} - {{ interface.state }}</small>
-            </div>
-            <div>
-              <span class="label">Connessione</span>
-              <span>{{ interface.connection or "Nessuna" }}</span>
-            </div>
-            <div>
-              <span class="label">IPv4</span>
-              <span>{{ interface.ipv4_addresses|join(", ") or "n/d" }}</span>
-            </div>
-            <div>
-              <span class="label">Gateway</span>
-              <span>{{ interface.gateway or "n/d" }}</span>
-            </div>
-            <div>
-              <span class="label">DNS</span>
-              <span>{{ interface.dns|join(", ") or "n/d" }}</span>
-            </div>
-            <div>
-              <span class="label">Metodo</span>
-              <span>{{ interface.ipv4_method or "n/d" }}</span>
-            </div>
-            {% if not interface.configurable %}
-            <p class="muted full-row">Interfaccia protetta mentre l'hotspot e' attivo.</p>
-            {% endif %}
-          </article>
-          {% else %}
-          <p class="muted">Nessuna interfaccia ethernet o Wi-Fi rilevata.</p>
-          {% endfor %}
-        </div>
-
-        <form method="post" action="/network/ipv4" class="setup-form ip-form" id="ip-form">
-          <h3>Modifica indirizzo IP</h3>
-          <label>
-            <span>Interfaccia</span>
-            <select name="interface" id="ip-interface" required>
-              {% for interface in status.interfaces %}
-              <option value="{{ interface.name }}" {% if not interface.configurable %}disabled{% endif %}>
-                {{ interface.name }} - {{ interface.type }}{% if not interface.configurable %} (hotspot attivo){% endif %}
-              </option>
-              {% endfor %}
-            </select>
-          </label>
-
-          <label>
-            <span>Modalita' IPv4</span>
-            <select name="ip_mode" id="ip-mode">
-              <option value="dhcp">DHCP automatico</option>
-              <option value="static">Indirizzo statico</option>
-            </select>
-          </label>
-
-          <div id="static-ip-fields" class="stacked hidden">
-            <label>
-              <span>Indirizzo IPv4</span>
-              <input type="text" name="ip_address" placeholder="192.168.1.50/24">
-            </label>
-
-            <label>
-              <span>Gateway</span>
-              <input type="text" name="gateway" placeholder="192.168.1.1">
-            </label>
-
-            <label>
-              <span>DNS</span>
-              <input type="text" name="dns" placeholder="1.1.1.1, 8.8.8.8">
-            </label>
-          </div>
-
-          <button type="submit" class="primary-button">Applica configurazione IP</button>
-        </form>
       </section>
 
       <section class="panel access-panel">
@@ -346,6 +349,7 @@
       const scanButton = document.getElementById("scan-networks-button");
       const fullScanButton = document.getElementById("full-scan-button");
       const scanStatus = document.getElementById("scan-status");
+      const networkCount = document.getElementById("network-count");
       const networkList = document.getElementById("network-list");
 
       function syncVisibility() {
@@ -389,6 +393,9 @@
       }
 
       function renderNetworks(networks) {
+        const count = networks.length;
+        networkCount.textContent = count === 1 ? "1 rete rilevata" : `${count} reti rilevate`;
+
         if (!networks.length) {
           networkList.innerHTML = '<p class="muted">Nessuna rete rilevata al momento.</p>';
           return;

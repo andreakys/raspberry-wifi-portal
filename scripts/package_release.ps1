@@ -15,11 +15,15 @@ tar.exe `
   --exclude="$ProjectName/.codex" `
   --exclude="$ProjectName/.codex-remote-attachments" `
   --exclude="$ProjectName/.git" `
+  --exclude="$ProjectName/.git.*" `
   --exclude="$ProjectName/.venv" `
+  --exclude="$ProjectName/output" `
   --exclude="$ProjectName/release" `
   --exclude="$ProjectName/tmp" `
   --exclude="$ProjectName/__pycache__" `
+  --exclude="$ProjectName/scripts/__pycache__" `
   --exclude="$ProjectName/services/__pycache__" `
+  --exclude="$ProjectName/tests/__pycache__" `
   -czf $ArchivePath `
   -C $ProjectParent `
   $ProjectName

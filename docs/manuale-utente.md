@@ -2,7 +2,7 @@
 
 ## VT Network Manager
 
-Versione documento: 1.13.0
+Versione documento: 1.14.0
 Data: 15 luglio 2026
 
 ## 1. Scopo
@@ -30,6 +30,7 @@ Il sistema crea un hotspot temporaneo chiamato `Pi-Setup` quando il Raspberry no
 - installazione guidata con parametri interattivi
 - installazione non interattiva per provisioning ripetibili
 - servizio `systemd` per avvio automatico
+- server TCP locale di sola lettura con riepilogo rete ogni 30 secondi
 
 ## 3. Requisiti
 
@@ -162,6 +163,9 @@ PORTAL_TITLE=VT Network Manager
 APP_VERSION=
 PORTAL_PASSWORD=password-di-accesso-al-portale
 PORTAL_SESSION_SECRET=chiave-sessione-generata
+NETWORK_STATUS_TCP_ENABLED=true
+NETWORK_STATUS_TCP_PORT=6001
+NETWORK_STATUS_TCP_INTERVAL_SECONDS=30
 WIFI_INTERFACE=wlan0
 HOTSPOT_INTERFACE=wlan0
 CLIENT_WIFI_INTERFACE=wlan0
@@ -318,6 +322,48 @@ Gateway e DNS sono opzionali. I DNS possono essere separati da virgola, spazio o
 
 Nota di sicurezza operativa: l'interfaccia che sta servendo l'hotspot temporaneo viene mostrata ma non puo' essere modificata finche' l'hotspot e' attivo. Questo evita di perdere il portale durante il setup. La funzione e' pensata soprattutto per configurare la LAN cablata, ad esempio `eth0`.
 
+### 6.8 Stato rete per il software del display via TCP
+
+VT Network Manager espone un server TCP di sola lettura su `127.0.0.1:6001`. Il collegamento e' disponibile soltanto sul dispositivo locale: un PC sulla LAN o un telefono collegato all'hotspot non possono aprire direttamente questa socket.
+
+Il software del display puo' collegarsi alla porta `6001`. Riceve subito una riga UTF-8 terminata da `\n` e, finche' mantiene aperto il collegamento, un nuovo riepilogo ogni 30 secondi. Il server supporta piu' client contemporanei e non accetta comandi.
+
+Esempio con Ethernet, hotspot su `wlan0` e client Wi-Fi su `wlan1`:
+
+```text
+internet: si, eth-ip: 192.168.1.14, eth-mode: DHCP, wi-fi enable: si, hot-spot: Pi-Setup / 192.168.4.1, wlan1: Azienda / 10.0.0.23
+```
+
+Esempio con Wi-Fi disabilitato:
+
+```text
+internet: si, eth-ip: 192.168.1.14, eth-mode: static, wi-fi enable: no, wi-fi off
+```
+
+Significato dei campi:
+
+- `internet`: `si` solo quando NetworkManager verifica connettivita' completa; `no` per rete locale, captive portal, connettivita' limitata o assente
+- `eth-ip`: indirizzo IPv4 attuale di `eth0`, senza prefisso CIDR; `n/d` se assente
+- `eth-mode`: `DHCP`, `static` oppure `n/d`
+- `wi-fi enable`: stato della radio Wi-Fi
+- `hot-spot`: SSID hotspot e indirizzo del portale, quando l'hotspot e' attivo
+- `wlan0`, `wlan1` e altre radio: SSID e IPv4 attuali; `n/d` indica un dato non disponibile o un'interfaccia non connessa
+- le virgole presenti nei valori vengono convertite in spazi, perche' la virgola separa i campi
+
+Le impostazioni sono:
+
+```dotenv
+NETWORK_STATUS_TCP_ENABLED=true
+NETWORK_STATUS_TCP_PORT=6001
+NETWORK_STATUS_TCP_INTERVAL_SECONDS=30
+```
+
+Per leggere il primo messaggio direttamente dal dispositivo:
+
+```bash
+python3 -c "import socket; s=socket.create_connection(('127.0.0.1', 6001)); print(s.recv(4096).decode().strip()); s.close()"
+```
+
 ## 7. Utilizzo dal telefono
 
 ### 7.1 Collegamento all'hotspot
@@ -403,7 +449,7 @@ Se `HOTSPOT_INTERFACE` e `CLIENT_WIFI_INTERFACE` sono la stessa radio, per esemp
 
 Se accedi al portale da un PC collegato via cavo LAN e la LAN e' presente, il pulsante `Scansiona` puo' fare direttamente una scansione completa: il portale spegne l'hotspot per pochi secondi, cerca le reti e aggiorna la lista restando raggiungibile tramite LAN.
 
-Nota versione: dalla versione `1.13.0` il portale usa il nome `VT Network Manager`, distingue chiaramente Wi-Fi integrata e dongle USB, mostra lo stato termico e offre una guida rapida stampabile. Dalla versione `1.12.6` puoi scegliere la radio Wi-Fi su cui attivare la connessione finale e la scansione usa la stessa radio.
+Nota versione: dalla versione `1.14.0` il portale espone anche il riepilogo rete TCP locale. Dalla versione `1.13.0` usa il nome `VT Network Manager`, distingue chiaramente Wi-Fi integrata e dongle USB, mostra lo stato termico e offre una guida rapida stampabile. Dalla versione `1.12.6` puoi scegliere la radio Wi-Fi su cui attivare la connessione finale e la scansione usa la stessa radio.
 
 Quando premi `Scansione completa`:
 

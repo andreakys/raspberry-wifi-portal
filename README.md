@@ -69,6 +69,7 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 - recovery automatico dell'hotspot dopo boot fallito o perdita prolungata rete
 - installazione da archivio o da repository GitHub
 - profili pronti per reti stabili o instabili
+- server TCP locale di sola lettura con riepilogo rete ogni 30 secondi
 
 ## Obiettivo
 
@@ -98,7 +99,8 @@ raspberry-wifi-portal/
 |-- requirements.txt
 |-- services/
 |   |-- __init__.py
-|   `-- network_manager.py
+|   |-- network_manager.py
+|   `-- network_status_tcp.py
 |-- static/
 |   `-- styles.css
 |-- systemd/
@@ -133,6 +135,9 @@ raspberry-wifi-portal/
   - lettura dello stato IPv4 delle interfacce
   - configurazione IPv4 DHCP/statico tramite `NetworkManager`
   - verifica stato e connettivita'
+
+- `services/network_status_tcp.py`
+  Compone il riepilogo testuale e gestisce il server TCP locale sulla porta `6001`.
 
 - `templates/index.html`
   Pagina principale con form di configurazione, scheda accesso stampabile e scansione reti.
@@ -239,7 +244,7 @@ Se accedi dal PC tramite cavo LAN e la LAN e' presente, il pulsante `Scansiona` 
 
 Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` in alto: `1` indica solo la radio della scheda, `2` con nomi come `wlan0, wlan1` indica anche un dongle USB. Nel form `Configura collegamento Wi-Fi` puoi scegliere `Interfaccia radio` per decidere su quale radio attivare la connessione finale.
 
-Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.13.0`: questa release usa il nome `VT Network Manager`, distingue Wi-Fi integrata e dongle USB, mostra lo stato termico e aggiunge la guida rapida stampabile.
+Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.14.0`: questa release usa il nome `VT Network Manager`, distingue Wi-Fi integrata e dongle USB, mostra lo stato termico, aggiunge la guida rapida stampabile e il server locale di stato rete.
 
 ### 4. Provisioning
 
@@ -274,6 +279,9 @@ Il backend crea una nuova connessione `NetworkManager`, restituisce subito una p
 | `RECONNECT_GRACE_SECONDS` | `45` | Tempo minimo concesso a NetworkManager per i tentativi di riconnessione |
 | `DISCONNECT_HOTSPOT_THRESHOLD_SECONDS` | `180` | Soglia di perdita prolungata della rete prima di riattivare l'hotspot |
 | `HOTSPOT_COOLDOWN_SECONDS` | `90` | Pausa dopo provisioning o riattivazione hotspot per evitare rimbalzi |
+| `NETWORK_STATUS_TCP_ENABLED` | `true` | Abilita il server TCP locale di stato rete |
+| `NETWORK_STATUS_TCP_PORT` | `6001` | Porta TCP in ascolto solo su `127.0.0.1` |
+| `NETWORK_STATUS_TCP_INTERVAL_SECONDS` | `30` | Intervallo tra due messaggi per i client collegati |
 
 Le variabili vengono lette da:
 
@@ -282,6 +290,40 @@ Le variabili vengono lette da:
 ```
 
 Questo file viene preservato durante reinstallazioni o aggiornamenti.
+
+### Server TCP locale di stato rete
+
+VT Network Manager apre un server TCP di sola lettura su `127.0.0.1:6001`. La socket non e' raggiungibile dalla LAN o dall'hotspot: e' destinata a un altro processo in esecuzione sullo stesso dispositivo, ad esempio il software del display.
+
+Quando un client si collega riceve subito una riga UTF-8 terminata da `\n`; finche' resta collegato riceve una nuova riga ogni 30 secondi. Sono supportati piu' client contemporanei. In assenza di client il servizio non esegue i controlli dedicati al messaggio TCP.
+
+Esempio con Ethernet, hotspot su `wlan0` e Wi-Fi client su `wlan1`:
+
+```text
+internet: si, eth-ip: 192.168.1.14, eth-mode: DHCP, wi-fi enable: si, hot-spot: Pi-Setup / 192.168.4.1, wlan1: Azienda / 10.0.0.23
+```
+
+Esempio con radio Wi-Fi disabilitata:
+
+```text
+internet: si, eth-ip: 192.168.1.14, eth-mode: static, wi-fi enable: no, wi-fi off
+```
+
+Regole del formato:
+
+- i campi sono separati da virgola e spazio
+- gli indirizzi sono riportati senza prefisso CIDR
+- `eth-mode` vale `DHCP`, `static` oppure `n/d`
+- `internet: si` indica che il controllo di connettivita' di NetworkManager e' `full`; reti locali, captive portal e connettivita' limitata producono `no`
+- con hotspot attivo compare `hot-spot: SSID / IP portale`
+- ogni altra radio rilevata compare come `wlanX: SSID / IP`; se non e' connessa, SSID o IP possono valere `n/d`
+- eventuali virgole contenute nei valori, ad esempio nell'SSID, vengono sostituite da spazi per non rompere la separazione dei campi
+
+Prova locale, leggendo il primo messaggio e chiudendo la connessione:
+
+```bash
+python3 -c "import socket; s=socket.create_connection(('127.0.0.1', 6001)); print(s.recv(4096).decode().strip()); s.close()"
+```
 
 ### Scenari con una o due interfacce Wi-Fi
 
@@ -496,7 +538,7 @@ grep -E 'PORTAL_TITLE|APP_VERSION' /etc/raspberry-wifi-portal/portal.env
 sudo systemctl restart raspberry-wifi-portal.service
 ```
 
-Il portale aggiornato mostra un badge `Versione 1.13.0`, il titolo `VT Network Manager`, il campo `Interfaccia radio`, il riquadro `Temperatura dispositivo` con stato termico, le etichette `wlan0 - Wi-Fi integrata` e, solo se presente, `wlan1 - dongle USB Wi-Fi`, oltre alla sezione `Documenti utente` con guida rapida e scheda accesso. Se non li vedi, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
+Il portale aggiornato mostra un badge `Versione 1.14.0`, il titolo `VT Network Manager`, il campo `Interfaccia radio`, il riquadro `Temperatura dispositivo` con stato termico, le etichette `wlan0 - Wi-Fi integrata` e, solo se presente, `wlan1 - dongle USB Wi-Fi`, oltre alla sezione `Documenti utente` con guida rapida e scheda accesso. La stessa versione espone il riepilogo rete locale su `127.0.0.1:6001`. Se non trovi queste funzioni, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
 
 ## Aggiornamento
 

@@ -304,12 +304,17 @@ fi
 portal_address="$(awk -F= '/^HOTSPOT_ADDRESS=/{print $2}' "${ENV_FILE}" | tail -n 1 | cut -d/ -f1)"
 hotspot_ssid="$(awk -F= '/^HOTSPOT_SSID=/{print $2}' "${ENV_FILE}" | tail -n 1)"
 portal_password="$(get_env_value PORTAL_PASSWORD)"
+network_status_tcp_enabled="$(get_env_value NETWORK_STATUS_TCP_ENABLED)"
+network_status_tcp_port="$(get_env_value NETWORK_STATUS_TCP_PORT)"
 
 echo
 echo "Installazione completata."
 echo "Hotspot: ${hotspot_ssid:-Pi-Setup}"
 echo "Portale: http://${portal_address:-192.168.4.1}"
 echo "Password portale: ${portal_password}"
+if [[ "${network_status_tcp_enabled:-true}" == "true" ]]; then
+  echo "Stato rete TCP locale: 127.0.0.1:${network_status_tcp_port:-6001}"
+fi
 if [[ "${GENERATED_PORTAL_PASSWORD}" == true ]]; then
   echo "Password generata automaticamente: conservala o cambiala in ${ENV_FILE}."
 fi

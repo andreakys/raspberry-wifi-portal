@@ -14,6 +14,7 @@ from services.network_manager import (
     NetworkManagerError,
     NetworkManagerService,
 )
+from services.network_status_tcp import NetworkStatusTcpServer, build_network_status_line
 
 config = load_config()
 network_manager = NetworkManagerService(config)
@@ -429,8 +430,22 @@ def _run_recovery_monitor() -> None:
 
 def _start_background_threads() -> None:
     if config.auto_recovery_enabled:
-        monitor = Thread(target=_run_recovery_monitor, daemon=True)
+        monitor = Thread(target=_run_recovery_monitor, daemon=True, name="hotspot-recovery")
         monitor.start()
+
+    if config.network_status_tcp_enabled:
+        status_server = NetworkStatusTcpServer(
+            lambda: build_network_status_line(network_manager.tcp_status_snapshot()),
+            port=config.network_status_tcp_port,
+            interval_seconds=config.network_status_tcp_interval_seconds,
+            logger=app.logger,
+        )
+        tcp_thread = Thread(
+            target=status_server.serve_forever,
+            daemon=True,
+            name="network-status-tcp",
+        )
+        tcp_thread.start()
 
 
 @app.get("/login")

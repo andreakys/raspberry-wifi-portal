@@ -27,7 +27,7 @@ TMP_DIR = ROOT / "tmp" / "pdfs"
 OUTPUT_PDF = OUTPUT_DIR / "manuale-utente-raspberry-wifi-portal.pdf"
 DOCS_PDF = ROOT / "docs" / "manuale-utente-raspberry-wifi-portal.pdf"
 CODE_WRAP_WIDTH = 88
-DOCUMENT_VERSION = "1.13.0"
+DOCUMENT_VERSION = "1.14.0"
 DOCUMENT_DATE = "15 luglio 2026"
 
 
@@ -327,6 +327,19 @@ def wifi_scenario_flowables() -> list[object]:
     ]
 
 
+def tcp_status_diagram() -> Drawing:
+    width = 16.0 * cm
+    height = 4.2 * cm
+    drawing = Drawing(width, height)
+    drawing.add(Rect(0, 0, width, height, rx=10, ry=10, fillColor=colors.HexColor("#f8fbff"), strokeColor=colors.HexColor("#c8d7ea"), strokeWidth=0.8))
+    drawing.add(String(12, height - 20, "Riepilogo rete locale", fontName="Helvetica-Bold", fontSize=10, fillColor=colors.HexColor("#14532d")))
+    add_box(drawing, 18, 44, 128, 46, "VT Network Manager", "127.0.0.1:6001", "#e8f1fb")
+    add_box(drawing, 326, 44, 128, 46, "Software display", "client TCP locale", "#eaf7ef")
+    add_arrow(drawing, 146, 67, 326, 67, "subito + ogni 30 s")
+    drawing.add(String(18, 20, "Una riga UTF-8 terminata da newline; servizio di sola lettura e non esposto sulla LAN.", fontName="Helvetica", fontSize=8, fillColor=colors.HexColor("#475569")))
+    return drawing
+
+
 def build_story():
     styles = build_styles()
     story = []
@@ -424,6 +437,10 @@ def build_story():
             if line.startswith("### 6.7 "):
                 story.append(Spacer(1, 0.08 * cm))
                 story.append(ip_management_diagram())
+                story.append(Spacer(1, 0.18 * cm))
+            if line.startswith("### 6.8 "):
+                story.append(Spacer(1, 0.08 * cm))
+                story.append(tcp_status_diagram())
                 story.append(Spacer(1, 0.18 * cm))
             if line.startswith("### 7.3 "):
                 story.append(Spacer(1, 0.08 * cm))

@@ -99,6 +99,14 @@ sudo systemctl status raspberry-wifi-portal.service
 sudo journalctl -u raspberry-wifi-portal.service -f
 ```
 
+Dalla versione `1.14.0` il servizio espone anche il riepilogo rete locale su `127.0.0.1:6001`. Per leggere il primo aggiornamento:
+
+```bash
+python3 -c "import socket; s=socket.create_connection(('127.0.0.1', 6001)); print(s.recv(4096).decode().strip()); s.close()"
+```
+
+La porta e' accessibile soltanto dai programmi eseguiti sullo stesso dispositivo.
+
 ## Rimozione
 
 ```bash

@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-APP_VERSION = "1.13.0"
+APP_VERSION = "1.14.0"
 DEFAULT_PORTAL_TITLE = "VT Network Manager"
 
 
@@ -47,6 +47,11 @@ class PortalConfig:
     reconnect_grace_seconds: int = int(os.getenv("RECONNECT_GRACE_SECONDS", "45"))
     disconnect_hotspot_threshold_seconds: int = int(os.getenv("DISCONNECT_HOTSPOT_THRESHOLD_SECONDS", "180"))
     hotspot_cooldown_seconds: int = int(os.getenv("HOTSPOT_COOLDOWN_SECONDS", "90"))
+    network_status_tcp_enabled: bool = _bool_from_env("NETWORK_STATUS_TCP_ENABLED", True)
+    network_status_tcp_port: int = int(os.getenv("NETWORK_STATUS_TCP_PORT", "6001"))
+    network_status_tcp_interval_seconds: int = int(
+        os.getenv("NETWORK_STATUS_TCP_INTERVAL_SECONDS", "30")
+    )
 
 
 def load_config() -> PortalConfig:

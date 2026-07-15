@@ -15,11 +15,15 @@ tar \
   --exclude="${PROJECT_NAME}/.codex" \
   --exclude="${PROJECT_NAME}/.codex-remote-attachments" \
   --exclude="${PROJECT_NAME}/.git" \
+  --exclude="${PROJECT_NAME}/.git.*" \
   --exclude="${PROJECT_NAME}/.venv" \
+  --exclude="${PROJECT_NAME}/output" \
   --exclude="${PROJECT_NAME}/release" \
   --exclude="${PROJECT_NAME}/tmp" \
   --exclude="${PROJECT_NAME}/__pycache__" \
+  --exclude="${PROJECT_NAME}/scripts/__pycache__" \
   --exclude="${PROJECT_NAME}/services/__pycache__" \
+  --exclude="${PROJECT_NAME}/tests/__pycache__" \
   -czf "${ARCHIVE_PATH}" \
   -C "${PROJECT_PARENT}" \
   "${PROJECT_NAME}"

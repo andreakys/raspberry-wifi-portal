@@ -67,6 +67,46 @@ class NetworkManagerService:
         status = result.stdout.strip().lower()
         return status or "unknown"
 
+    def internet_available(self) -> bool:
+        try:
+            result = self._run_nmcli(
+                "-t",
+                "networking",
+                "connectivity",
+                "check",
+                check=False,
+                timeout=10,
+            )
+        except subprocess.TimeoutExpired:
+            return False
+        return result.returncode == 0 and result.stdout.strip().lower() == "full"
+
+    def wifi_enabled(self) -> bool:
+        result = self._run_nmcli("-t", "radio", "wifi", check=False)
+        return result.returncode == 0 and result.stdout.strip().lower() in {
+            "enabled",
+            "on",
+            "yes",
+        }
+
+    def tcp_status_snapshot(self) -> dict[str, Any]:
+        interfaces = self.list_ip_interfaces()
+        hotspot_active = any(
+            item.get("name") == self.config.hotspot_interface
+            and item.get("connection") == self.config.hotspot_connection_name
+            and item.get("state") == "connected"
+            for item in interfaces
+        )
+        return {
+            "internet_available": self.internet_available(),
+            "wifi_enabled": self.wifi_enabled(),
+            "hotspot_active": hotspot_active,
+            "hotspot_interface": self.config.hotspot_interface,
+            "hotspot_ssid": self.config.hotspot_ssid,
+            "portal_address": self.config.hotspot_address.split("/", 1)[0],
+            "interfaces": interfaces,
+        }
+
     def hotspot_active(self) -> bool:
         result = self._run_nmcli("-t", "-f", "NAME,TYPE", "connection", "show", "--active")
         for line in result.stdout.splitlines():
@@ -323,6 +363,13 @@ class NetworkManagerService:
                     "type": device_type,
                     "state": state,
                     "connection": connection_name,
+                    "ssid": (
+                        self.config.hotspot_ssid
+                        if is_hotspot_interface
+                        else self._connection_wifi_ssid(connection_name)
+                        if device_type == "wifi" and connection_name
+                        else None
+                    ),
                     "ipv4_addresses": self._device_values(device, "IP4.ADDRESS"),
                     "gateway": self._first_device_value(device, "IP4.GATEWAY"),
                     "dns": self._device_values(device, "IP4.DNS"),
@@ -796,6 +843,21 @@ class NetworkManagerService:
         if not connection_name:
             return None
         result = self._run_nmcli("-t", "-g", "ipv4.method", "connection", "show", connection_name, check=False)
+        value = result.stdout.strip()
+        return value or None
+
+    def _connection_wifi_ssid(self, connection_name: str) -> str | None:
+        result = self._run_nmcli(
+            "-t",
+            "--escape",
+            "no",
+            "-g",
+            "802-11-wireless.ssid",
+            "connection",
+            "show",
+            connection_name,
+            check=False,
+        )
         value = result.stdout.strip()
         return value or None
 

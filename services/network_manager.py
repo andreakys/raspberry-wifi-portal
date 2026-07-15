@@ -140,12 +140,14 @@ class NetworkManagerService:
         interfaces = self.list_ip_interfaces()
         wifi_interfaces = self._wifi_interfaces(interfaces)
         active_client_status = self.active_client_status()
+        active_client_interface = active_client_status.get("interface")
         return {
             "wifi_interface": self.config.wifi_interface,
             "hotspot_interface": self.config.hotspot_interface,
             "client_wifi_interface": self.config.client_wifi_interface,
             "wifi_interfaces": wifi_interfaces,
             "wifi_interface_names": [item["name"] for item in wifi_interfaces],
+            "wifi_interface_labels": [item["display_name"] for item in wifi_interfaces],
             "wifi_interface_count": len(wifi_interfaces),
             "has_separate_wifi_interfaces": self.config.hotspot_interface != self.config.client_wifi_interface,
             "board_temperature": self.board_temperature(),
@@ -153,7 +155,11 @@ class NetworkManagerService:
             "device_state": active_client_status.get("state") or self.device_state(),
             "active_connection": self.active_connection_name(),
             "active_client_connection": active_client_status.get("connection"),
-            "active_client_interface": active_client_status.get("interface"),
+            "active_client_interface": active_client_interface,
+            "active_client_interface_label": (
+                self.interface_display_name(active_client_interface) if active_client_interface else None
+            ),
+            "hotspot_interface_label": self.interface_display_name(self.config.hotspot_interface),
             "wifi_client_configured": self.wifi_client_configured(),
             "hotspot_active": self.hotspot_active(),
             "hotspot_ssid": self.config.hotspot_ssid,
@@ -242,10 +248,41 @@ class NetworkManagerService:
 
     def board_temperature(self) -> dict[str, Any]:
         celsius = self._read_board_temperature_celsius()
+        if celsius is None:
+            level = "unknown"
+            status = "Non disponibile"
+            guidance = "Sensore temperatura non disponibile."
+        elif celsius < 60:
+            level = "normal"
+            status = "Normale"
+            guidance = "Temperatura regolare."
+        elif celsius < 70:
+            level = "watch"
+            status = "Sotto osservazione"
+            guidance = "Controlla che le prese d'aria del display siano libere."
+        elif celsius < 80:
+            level = "high"
+            status = "Alta"
+            guidance = "Migliora ventilazione e raffreddamento del vano elettronica."
+        else:
+            level = "critical"
+            status = "Critica"
+            guidance = "Possibile limitazione termica: verifica subito ventole e flusso d'aria."
         return {
             "celsius": celsius,
             "display": f"{celsius:.1f} C" if celsius is not None else "n/d",
+            "level": level,
+            "status": status,
+            "guidance": guidance,
         }
+
+    @staticmethod
+    def interface_display_name(interface: str) -> str:
+        if interface == "wlan0":
+            return "wlan0 - Wi-Fi integrata"
+        if interface == "wlan1":
+            return "wlan1 - dongle USB Wi-Fi"
+        return f"{interface} - interfaccia Wi-Fi"
 
     def reboot_system(self) -> None:
         try:
@@ -280,6 +317,9 @@ class NetworkManagerService:
             interfaces.append(
                 {
                     "name": device,
+                    "display_name": (
+                        self.interface_display_name(device) if device_type == "wifi" else device
+                    ),
                     "type": device_type,
                     "state": state,
                     "connection": connection_name,

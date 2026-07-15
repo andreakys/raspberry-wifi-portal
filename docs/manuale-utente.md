@@ -1,13 +1,13 @@
 # Manuale Utente
 
-## Pi Network Manager
+## VT Network Manager
 
-Versione documento: 1.12.6
-Data: 8 luglio 2026
+Versione documento: 1.13.0
+Data: 15 luglio 2026
 
 ## 1. Scopo
 
-Questo manuale descrive come installare, configurare e utilizzare il portale di gestione rete per Raspberry Pi 5.
+Questo manuale descrive come installare, configurare e utilizzare il portale di gestione rete del display a LED.
 
 Il sistema crea un hotspot temporaneo chiamato `Pi-Setup` quando il Raspberry non e' ancora collegato alla rete finale. Da smartphone o tablet e' possibile aprire una pagina web locale, inserire i dati della rete aziendale e lasciare che il Raspberry provi automaticamente la connessione.
 
@@ -104,7 +104,7 @@ cd "C:\Users\Desktop-user\PROGETTI\SVILUPPO\Scheda prodotto editor\raspberry-wif
 
 Il comando crea un archivio `.tar.gz` nella cartella `release`.
 
-### 5.2 Copiare il pacchetto sul Raspberry
+### 5.2 Copiare il pacchetto sul dispositivo
 
 Esempio:
 
@@ -112,7 +112,7 @@ Esempio:
 scp /percorso/del/pacchetto/raspberry-wifi-portal-YYYYMMDD-HHMMSS.tar.gz pi@raspberrypi.local:/tmp/
 ```
 
-### 5.3 Installare sul Raspberry
+### 5.3 Installare sul dispositivo
 
 Accedi al Raspberry e lancia:
 
@@ -158,7 +158,7 @@ Esempio:
 PORTAL_HOST=0.0.0.0
 PORTAL_PORT=80
 PORTAL_DEBUG=false
-PORTAL_TITLE=Pi Network Manager
+PORTAL_TITLE=VT Network Manager
 APP_VERSION=
 PORTAL_PASSWORD=password-di-accesso-al-portale
 PORTAL_SESSION_SECRET=chiave-sessione-generata
@@ -180,7 +180,12 @@ HOTSPOT_COOLDOWN_SECONDS=90
 
 ### 6.2 Scenari con una o due interfacce Wi-Fi
 
-Il dongle Wi-Fi USB non e' obbligatorio. Il portale funziona anche con la sola radio Wi-Fi integrata del Raspberry.
+Il dongle Wi-Fi USB non e' obbligatorio. Il portale funziona anche con la sola radio Wi-Fi integrata.
+
+Nel portale le radio vengono indicate cosi':
+
+- `wlan0 - Wi-Fi integrata`: radio presente sulla scheda
+- `wlan1 - dongle USB Wi-Fi`: seconda radio, mostrata solo quando il dongle e' realmente rilevato
 
 Scenario con sola Wi-Fi integrata:
 
@@ -339,11 +344,16 @@ Se hai usato l'installazione guidata e hai lasciato vuota la password portale, l
 /etc/raspberry-wifi-portal/portal.env
 ```
 
-### 7.3 Scheda accesso stampabile
+### 7.3 Documenti stampabili e guida rapida
 
-Dopo il login, la sezione `Scheda accesso` mostra il pulsante `Stampa/PDF`.
+Dopo il login, la sezione `Documenti utente` permette di aprire due pagine stampabili:
 
-Il pulsante apre una pagina semplice, pensata per essere stampata o salvata come PDF dal browser, con:
+- `Guida rapida configurazione`, con i passaggi per LAN, Wi-Fi, radio, temperatura e profili salvati
+- `Scheda accesso`, con SSID hotspot, password e indirizzo del portale
+
+Entrambe possono essere stampate o salvate in PDF dal browser.
+
+La scheda accesso e' una pagina semplice con:
 
 - nome hotspot temporaneo
 - password hotspot
@@ -353,18 +363,31 @@ Il pulsante apre una pagina semplice, pensata per essere stampata o salvata come
 
 La scheda contiene password operative: stampala o inviala solo a persone autorizzate.
 
-Flusso consigliato:
+Flusso consigliato per la documentazione utente:
 
-1. Apri `Scheda accesso`.
-2. Premi `Stampa/PDF`.
-3. Stampa la pagina oppure scegli `Salva come PDF` nel browser.
-4. Usa la scheda per collegarti all'hotspot e aprire il portale.
+1. Apri `Guida rapida configurazione` e salvala in PDF per l'utente del display.
+2. Apri `Scheda accesso` solo se devi consegnare anche SSID e password operative.
+3. Premi `Stampa/PDF` e scegli stampa oppure `Salva come PDF` nel browser.
+4. Conserva la scheda accesso con maggiore attenzione perche' contiene password.
 
 La scheda accesso si trova in fondo alla pagina principale, dopo le sezioni operative di rete e Wi-Fi.
 
-### 7.4 Temperatura e riavvio
+### 7.4 Temperatura del display e riavvio
 
-Nella parte alta del portale viene mostrata la `Temperatura scheda`, letta dal sensore termico del Raspberry. Se il dato non e' disponibile, viene mostrato `n/d`.
+Nella parte alta del portale viene mostrata la `Temperatura dispositivo`, letta dal sensore termico della scheda. Se il dato non e' disponibile, viene mostrato `n/d`.
+
+Il portale usa soglie preventive pensate per un controller installato nel vano di un tabellone a LED:
+
+- sotto `60 C`: `Normale`
+- da `60 C` a `69.9 C`: `Sotto osservazione`; controlla prese d'aria e polvere
+- da `70 C` a `79.9 C`: `Alta`; migliora ventilazione e raffreddamento
+- da `80 C`: `Critica`; controlla subito ventole e flusso d'aria
+
+Il Wi-Fi attivo puo' aumentare leggermente la temperatura, soprattutto con traffico continuo, ma normalmente non e' la fonte principale. In un tabellone chiuso incidono maggiormente temperatura ambiente, alimentatori LED, pannelli, carico del processore e ricambio d'aria.
+
+La documentazione ufficiale indica che tra `80 C` e `85 C` il processore riduce progressivamente le prestazioni e a `85 C` applica una limitazione piu' forte. Per questo il portale segnala la condizione critica gia' da `80 C`.
+
+Riferimento ufficiale: `https://www.raspberrypi.com/documentation/hardware/raspberrypi/power.html`
 
 Il pulsante `Riavvia` esegue un reboot del Raspberry tramite `systemctl reboot`. Il comando e' disponibile solo dopo il login e richiede conferma nel browser.
 
@@ -380,7 +403,7 @@ Se `HOTSPOT_INTERFACE` e `CLIENT_WIFI_INTERFACE` sono la stessa radio, per esemp
 
 Se accedi al portale da un PC collegato via cavo LAN e la LAN e' presente, il pulsante `Scansiona` puo' fare direttamente una scansione completa: il portale spegne l'hotspot per pochi secondi, cerca le reti e aggiorna la lista restando raggiungibile tramite LAN.
 
-Nota versione: dalla versione `1.12.6` puoi scegliere dal form la radio Wi-Fi su cui attivare la connessione finale, e anche la scansione reti usa quella radio. Dalla versione `1.12.5` i campi password hanno il pulsante `Mostra` e la sezione rete permette di eliminare i profili `setup-*` creati dal portale.
+Nota versione: dalla versione `1.13.0` il portale usa il nome `VT Network Manager`, distingue chiaramente Wi-Fi integrata e dongle USB, mostra lo stato termico e offre una guida rapida stampabile. Dalla versione `1.12.6` puoi scegliere la radio Wi-Fi su cui attivare la connessione finale e la scansione usa la stessa radio.
 
 Quando premi `Scansione completa`:
 
@@ -392,7 +415,7 @@ Quando premi `Scansione completa`:
 
 Con due interfacce Wi-Fi, ad esempio hotspot su `wlan0` e client su `wlan1`, non serve spegnere l'hotspot: la scansione live usa direttamente la radio client.
 
-Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` nella parte alta del portale. Se mostra `2` e nomi come `wlan0, wlan1`, il Raspberry vede anche il dongle USB. In quel caso puoi configurare `HOTSPOT_INTERFACE=wlan0` e `CLIENT_WIFI_INTERFACE=wlan1` in `/etc/raspberry-wifi-portal/portal.env`.
+Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` nella parte alta del portale. `wlan0 - Wi-Fi integrata` e' la radio della scheda. `wlan1 - dongle USB Wi-Fi` compare solo quando il dongle e' presente e rilevato. Se wlan1 non compare, non devi configurarla.
 
 ### 7.6 Configura collegamento Wi-Fi
 
@@ -400,8 +423,8 @@ La sezione `Configura collegamento Wi-Fi` raccoglie interfaccia radio, SSID, tip
 
 Nel campo `Interfaccia radio` scegli su quale radio attivare la connessione:
 
-- `wlan0` se vuoi usare la Wi-Fi integrata o se hai una sola radio
-- `wlan1` se hai un dongle USB e vuoi lasciare `wlan0` all'hotspot temporaneo
+- `wlan0 - Wi-Fi integrata` se vuoi usare la radio della scheda o se hai una sola radio
+- `wlan1 - dongle USB Wi-Fi` se il dongle e' presente e vuoi lasciare wlan0 all'hotspot temporaneo
 
 Per una rete WPA2/WPA3 Personal compila:
 
@@ -496,7 +519,7 @@ sudo ./scripts/uninstall.sh
 - controlla che l'indirizzo sia `http://192.168.4.1`
 - verifica lo stato del servizio con `systemctl`
 
-### Il Raspberry non si collega alla rete aziendale
+### Il dispositivo non si collega alla rete aziendale
 
 - verifica `SSID` e password
 - controlla il metodo EAP corretto
@@ -542,7 +565,7 @@ Per aggiornare l'applicazione:
 4. riesegui `sudo ./scripts/install.sh --profile balanced`
 
 Il file `/etc/raspberry-wifi-portal/portal.env` viene mantenuto.
-Se il titolo e' ancora un vecchio default, come `Raspberry Pi Wi-Fi Setup` o `Wi-Fi Setup`, l'installer lo aggiorna automaticamente a `Pi Network Manager`. I titoli personalizzati non vengono sovrascritti.
+Se il titolo e' ancora un vecchio default, come `Raspberry Pi Wi-Fi Setup`, `Wi-Fi Setup` o `Pi Network Manager`, l'installer lo aggiorna automaticamente a `VT Network Manager`. I titoli personalizzati non vengono sovrascritti.
 
 Se dopo l'aggiornamento l'interfaccia sembra vecchia:
 
@@ -558,14 +581,14 @@ Verifica nel portale la presenza di:
 - pulsante `Scansiona`
 - pulsante `Riavvia`
 - tasto `Esci`
-- riquadro `Temperatura scheda`
+- riquadro `Temperatura dispositivo` con stato termico
 - riquadro `Interfacce Wi-Fi`
 - campo `Interfaccia radio` nella configurazione Wi-Fi
 - sezione `Interfacce di rete e indirizzi IP` subito sotto il riepilogo iniziale
 - lista `Reti visibili` compatta e scorrevole quando ci sono molte reti
 - pulsante `Mostra` sui campi password
 - sezione `Connessioni salvate dal portale`
-- sezione `Scheda accesso` in fondo alla pagina
+- sezione `Documenti utente` con guida rapida e scheda accesso
 
 ## 12. Pubblicazione su GitHub
 
@@ -600,7 +623,7 @@ git branch -M main
 git push -u origin main
 ```
 
-### 12.4 Installazione dal repository GitHub sul Raspberry
+### 12.4 Installazione dal repository GitHub sul dispositivo
 
 ```bash
 sudo apt-get update
@@ -634,6 +657,7 @@ sudo ./scripts/install.sh --profile balanced
 - apri `http://192.168.4.1`
 - accedi con la password portale
 - controlla il badge versione
+- usa `Guida rapida configurazione` per consegnare all'utente le istruzioni dell'interfaccia web
 - usa `Scheda accesso` se devi stampare o salvare in PDF i dati di accesso
 - premi `Scansiona` per aggiornare le reti disponibili
 - se sei collegato via LAN, `Scansiona` puo' fare la scansione completa senza perdere la pagina

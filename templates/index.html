@@ -15,7 +15,7 @@
             <span class="version-badge">Versione {{ app_version }}</span>
           </div>
           <div class="topbar-actions">
-            <form method="post" action="/system/reboot" onsubmit="return confirm('Riavviare il Raspberry adesso? Il portale non sara disponibile per circa un minuto.');">
+            <form method="post" action="/system/reboot" onsubmit="return confirm('Riavviare il dispositivo adesso? Il portale non sara disponibile per circa un minuto.');">
               <button type="submit" class="utility-button danger-button">Riavvia</button>
             </form>
             <form method="post" action="/logout">
@@ -25,29 +25,25 @@
         </div>
         <h1>{{ page_title }}</h1>
         <p class="lead">
-          Gestisci hotspot, Wi-Fi client, LAN cablata e indirizzi IP dal portale locale del Raspberry.
+          Gestisci hotspot, Wi-Fi client, LAN cablata e indirizzi IP del tuo Display.
         </p>
         <div class="status-grid">
           <article>
             <span class="label">Hotspot</span>
-            <strong>{{ status.hotspot_interface }}</strong>
+            <strong>{{ status.hotspot_interface_label }}</strong>
           </article>
           <article>
-            <span class="label">Wi-Fi client</span>
-            <strong>{{ status.client_wifi_interface }}</strong>
+            <span class="label">Wi-Fi client attiva</span>
+            <strong>{{ status.active_client_interface_label or "Nessuna" }}</strong>
           </article>
           <article>
             <span class="label">Interfacce Wi-Fi</span>
             <strong>{{ status.wifi_interface_count }}</strong>
-            <small>{{ status.wifi_interface_names|join(", ") or "n/d" }}</small>
+            <small>{{ status.wifi_interface_labels|join(", ") or "Nessuna radio rilevata" }}</small>
           </article>
           <article>
             <span class="label">Connessione attiva</span>
             <strong>{{ status.active_connection or "Nessuna" }}</strong>
-          </article>
-          <article>
-            <span class="label">Radio Wi-Fi attiva</span>
-            <strong>{{ status.active_client_interface or "n/d" }}</strong>
           </article>
           <article>
             <span class="label">LAN cablata</span>
@@ -61,9 +57,10 @@
             <span class="label">Connettivita'</span>
             <strong>{{ status.connectivity }}</strong>
           </article>
-          <article>
-            <span class="label">Temperatura scheda</span>
+          <article class="temperature-card temperature-{{ status.board_temperature.level }}">
+            <span class="label">Temperatura dispositivo</span>
             <strong>{{ status.board_temperature.display }}</strong>
+            <small>{{ status.board_temperature.status }} - {{ status.board_temperature.guidance }}</small>
           </article>
           <article>
             <span class="label">Portale</span>
@@ -94,7 +91,7 @@
           {% for interface in status.interfaces %}
           <article class="interface-item">
             <div>
-              <strong>{{ interface.name }}</strong>
+              <strong>{{ interface.display_name }}</strong>
               <small>{{ interface.type }} - {{ interface.state }}</small>
             </div>
             <div>
@@ -215,7 +212,7 @@
               <select name="wifi_interface" id="wifi-interface">
                 {% for interface in status.wifi_interfaces %}
                 <option value="{{ interface.name }}" {% if interface.name == status.client_wifi_interface %}selected{% endif %}>
-                  {{ interface.name }} - {{ interface.state }}{% if interface.connection %} ({{ interface.connection }}){% endif %}
+                  {{ interface.display_name }} - {{ interface.state }}{% if interface.connection %} ({{ interface.connection }}){% endif %}
                 </option>
                 {% else %}
                 <option value="">Nessuna interfaccia Wi-Fi rilevata</option>
@@ -323,7 +320,7 @@
           <div class="panel-header panel-header-row">
             <div>
               <h2>Reti visibili</h2>
-              <p>Scansione live dell'interfaccia Wi-Fi del Raspberry.</p>
+              <p>Scansione live della radio Wi-Fi selezionata.</p>
             </div>
             <button type="button" class="secondary-button" id="scan-networks-button">Scansiona</button>
           </div>
@@ -379,10 +376,21 @@
       <section class="panel access-panel">
         <div class="panel-header panel-header-row">
           <div>
-            <h2>Scheda accesso</h2>
-            <p>Pagina stampabile con SSID hotspot, password, indirizzo portale e password di accesso.</p>
+            <h2>Documenti utente</h2>
+            <p>Apri una guida operativa o la scheda con i dati di accesso, poi stampa o salva in PDF dal browser.</p>
           </div>
-          <a class="secondary-button button-link" href="/access-sheet" target="_blank" rel="noopener">Stampa/PDF</a>
+        </div>
+        <div class="document-actions">
+          <div>
+            <strong>Guida rapida configurazione</strong>
+            <small>Wi-Fi, LAN, interfacce radio, temperatura e profili salvati.</small>
+          </div>
+          <a class="secondary-button button-link" href="/quick-guide" target="_blank" rel="noopener">Apri/PDF</a>
+          <div>
+            <strong>Scheda accesso</strong>
+            <small>SSID hotspot, password e indirizzo del portale.</small>
+          </div>
+          <a class="secondary-button button-link" href="/access-sheet" target="_blank" rel="noopener">Apri/PDF</a>
         </div>
       </section>
     </main>

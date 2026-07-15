@@ -27,8 +27,8 @@ TMP_DIR = ROOT / "tmp" / "pdfs"
 OUTPUT_PDF = OUTPUT_DIR / "manuale-utente-raspberry-wifi-portal.pdf"
 DOCS_PDF = ROOT / "docs" / "manuale-utente-raspberry-wifi-portal.pdf"
 CODE_WRAP_WIDTH = 88
-DOCUMENT_VERSION = "1.12.6"
-DOCUMENT_DATE = "8 luglio 2026"
+DOCUMENT_VERSION = "1.13.0"
+DOCUMENT_DATE = "15 luglio 2026"
 
 
 def build_styles():
@@ -265,9 +265,9 @@ def ip_management_diagram() -> Drawing:
 
 def access_sheet_diagram() -> Drawing:
     return workflow_diagram(
-        "Scheda accesso - stampa o PDF dal browser",
+        "Documenti utente - stampa o PDF dal browser",
         [
-            ("Scheda", "dati accesso", "#ffffff"),
+            ("Guida/Scheda", "istruzioni e accesso", "#ffffff"),
             ("Stampa/PDF", "browser", "#e8f1fb"),
             ("Consegna", "utente autorizzato", "#fff7ed"),
             ("Setup", "configura rete", "#eaf7ef"),
@@ -333,11 +333,11 @@ def build_story():
 
     story.append(Spacer(1, 2.2 * cm))
     story.append(Paragraph("Manuale Utente", styles["TitlePage"]))
-    story.append(Paragraph("Pi Network Manager", styles["TitlePage"]))
+    story.append(Paragraph("VT Network Manager", styles["TitlePage"]))
     story.append(Spacer(1, 0.4 * cm))
     story.append(
         Paragraph(
-            "Installazione, configurazione e utilizzo del portale Wi-Fi temporaneo per Raspberry Pi 5",
+            "Installazione, configurazione e utilizzo del portale di rete per display a LED",
             styles["SmallMuted"],
         )
     )
@@ -347,7 +347,7 @@ def build_story():
         [
             ["Versione documento", DOCUMENT_VERSION],
             ["Data", DOCUMENT_DATE],
-            ["Target", "Raspberry Pi 5 con Raspberry Pi OS"],
+            ["Target", "Controller del display con Raspberry Pi OS"],
             ["Ambito", "Setup Wi-Fi locale con supporto base 802.1X"],
         ],
         colWidths=[5.0 * cm, 8.5 * cm],
@@ -448,7 +448,7 @@ def add_page_number(canvas, doc):
     canvas.saveState()
     canvas.setFont("Helvetica", 8.5)
     canvas.setFillColor(colors.HexColor("#475569"))
-    canvas.drawString(doc.leftMargin, 1.2 * cm, "Pi Network Manager")
+    canvas.drawString(doc.leftMargin, 1.2 * cm, "VT Network Manager")
     canvas.drawRightString(A4[0] - doc.rightMargin, 1.2 * cm, f"Pagina {doc.page}")
     canvas.restoreState()
 
@@ -464,7 +464,7 @@ def main():
         leftMargin=1.8 * cm,
         topMargin=1.7 * cm,
         bottomMargin=1.8 * cm,
-        title="Manuale Utente - Pi Network Manager",
+        title="Manuale Utente - VT Network Manager",
         author="OpenAI Codex",
     )
     story = build_story()

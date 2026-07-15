@@ -490,10 +490,11 @@ def reboot_system():
         pending=False,
         status_eyebrow="Sistema",
         status_title="Riavvio in corso",
-        message="Il Raspberry sta eseguendo il riavvio. Attendi circa un minuto prima di ricollegarti al portale.",
+        message="Il dispositivo sta eseguendo il riavvio. Attendi circa un minuto prima di ricollegarti al portale.",
         connection_name="Sistema",
         connectivity="reboot",
         interface=None,
+        interface_label=None,
     )
 
 
@@ -507,6 +508,18 @@ def access_sheet():
     status = network_manager.current_status()
     return render_template(
         "access_sheet.html",
+        page_title=config.portal_title,
+        app_version=config.app_version,
+        status=status,
+        access_sheet=_access_sheet(status),
+    )
+
+
+@app.get("/quick-guide")
+def quick_guide():
+    status = network_manager.current_status()
+    return render_template(
+        "quick_guide.html",
         page_title=config.portal_title,
         app_version=config.app_version,
         status=status,
@@ -618,7 +631,7 @@ def configure():
         return _render_index(error_message=validation_error, status_code=400)
 
     provisioning_state["state"] = "running"
-    provisioning_state["message"] = "Il Raspberry sta disattivando l'hotspot temporaneo e sta provando la nuova rete."
+    provisioning_state["message"] = "Il dispositivo sta disattivando l'hotspot temporaneo e sta provando la nuova rete."
     provisioning_state["connection_name"] = None
     provisioning_state["connectivity"] = None
     provisioning_state["interface"] = payload.get("wifi_interface")
@@ -636,6 +649,7 @@ def configure():
         connection_name=None,
         connectivity=None,
         interface=payload.get("wifi_interface"),
+        interface_label=network_manager.interface_display_name(payload.get("wifi_interface", "")),
     )
 
 

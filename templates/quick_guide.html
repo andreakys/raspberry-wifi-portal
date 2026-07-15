@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Guida rapida - {{ page_title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body class="print-body">
+    <main class="print-sheet quick-guide-sheet">
+      <header class="print-header">
+        <div>
+          <p class="eyebrow">Guida rapida configurazione</p>
+          <h1>{{ page_title }}</h1>
+          <p class="muted">Versione {{ app_version }} - Display a LED</p>
+        </div>
+        <button type="button" class="secondary-button no-print" onclick="window.print()">Stampa/PDF</button>
+      </header>
+
+      <section class="quick-summary">
+        <div>
+          <span class="label">Portale</span>
+          <strong>{{ access_sheet.portal_url }}</strong>
+        </div>
+        <div>
+          <span class="label">Temperatura</span>
+          <strong>{{ status.board_temperature.display }} - {{ status.board_temperature.status }}</strong>
+        </div>
+      </section>
+
+      <section class="print-notes quick-section">
+        <h2>1. Accedi al portale</h2>
+        <ol>
+          <li>Collegati all'hotspot <strong>{{ access_sheet.hotspot_ssid }}</strong>.</li>
+          <li>Apri <strong>{{ access_sheet.portal_url }}</strong> nel browser.</li>
+          <li>Inserisci la password portale. Usa <strong>Mostra</strong> per controllarla.</li>
+        </ol>
+      </section>
+
+      <section class="print-notes quick-section">
+        <h2>2. Riconosci le radio Wi-Fi</h2>
+        <ul>
+          <li><strong>wlan0 - Wi-Fi integrata:</strong> radio presente sulla scheda.</li>
+          {% if "wlan1" in status.wifi_interface_names %}
+          <li><strong>wlan1 - dongle USB Wi-Fi:</strong> seconda radio collegata alla porta USB.</li>
+          {% endif %}
+        </ul>
+        <p>
+          Radio rilevate: <strong>{{ status.wifi_interface_labels|join(", ") or "Nessuna" }}</strong>.
+          Se il dongle USB non e' installato, wlan1 non compare e non serve configurarla.
+        </p>
+      </section>
+
+      <section class="print-notes quick-section">
+        <h2>3. Configura la LAN cablata</h2>
+        <ol>
+          <li>Apri <strong>Interfacce di rete e indirizzi IP</strong>.</li>
+          <li>Seleziona <strong>eth0</strong>.</li>
+          <li>Scegli <strong>DHCP automatico</strong> oppure <strong>Indirizzo statico</strong>.</li>
+          <li>Con IP statico compila indirizzo/prefisso, gateway e DNS, poi applica.</li>
+        </ol>
+      </section>
+
+      <section class="print-notes quick-section">
+        <h2>4. Configura il collegamento Wi-Fi</h2>
+        <ol>
+          <li>In <strong>Interfaccia radio</strong> scegli wlan0 oppure il dongle wlan1, se presente.</li>
+          <li>Premi <strong>Scansiona</strong> e seleziona la rete dall'elenco.</li>
+          <li>Controlla SSID, sicurezza e password.</li>
+          <li>Premi <strong>Salva e connetti</strong>.</li>
+        </ol>
+        <p class="quick-note">
+          Con una sola radio, hotspot e Wi-Fi client condividono wlan0: durante il cambio rete il telefono puo'
+          perdere temporaneamente il collegamento. Con il dongle, wlan0 puo' mantenere l'hotspot mentre wlan1
+          si collega alla rete finale.
+        </p>
+      </section>
+
+      <section class="print-notes quick-section">
+        <h2>5. Controlla la temperatura</h2>
+        <table class="temperature-table">
+          <thead>
+            <tr><th>Temperatura</th><th>Indicazione</th><th>Azione</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>&lt; 60 C</td><td>Normale</td><td>Nessuna azione.</td></tr>
+            <tr><td>60-69 C</td><td>Sotto osservazione</td><td>Controlla prese d'aria e polvere.</td></tr>
+            <tr><td>70-79 C</td><td>Alta</td><td>Migliora ventilazione e raffreddamento.</td></tr>
+            <tr><td>&gt;= 80 C</td><td>Critica</td><td>Controlla subito ventole e flusso d'aria.</td></tr>
+          </tbody>
+        </table>
+        <p>
+          Il Wi-Fi attivo produce un piccolo aumento di calore, soprattutto con traffico continuo. Nel vano del
+          tabellone incidono maggiormente temperatura ambiente, alimentatori LED, pannelli e ventilazione.
+        </p>
+      </section>
+
+      <section class="print-notes quick-section">
+        <h2>6. Elimina una configurazione precedente</h2>
+        <p>
+          In <strong>Connessioni salvate dal portale</strong> elimina un profilo <strong>setup-*</strong> e ricrealo.
+          I profili di sistema e l'hotspot temporaneo restano protetti.
+        </p>
+      </section>
+
+      <footer class="quick-footer">
+        Conserva la scheda accesso separatamente: contiene password operative.
+      </footer>
+    </main>
+  </body>
+</html>

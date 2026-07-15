@@ -30,7 +30,7 @@ Alla fine collegati all'hotspot configurato e apri:
 http://192.168.4.1
 ```
 
-Dopo il login il portale mostra anche `Scheda accesso`: una pagina stampabile o salvabile come PDF con SSID hotspot, password, indirizzo portale e password di accesso.
+Dopo il login il portale mostra `Documenti utente`: una guida rapida stampabile/PDF e la scheda accesso con SSID hotspot, password, indirizzo portale e password di accesso.
 In alto trovi anche il numero di versione, utile per verificare se il servizio sta eseguendo davvero l'ultimo codice installato.
 
 ## Installazione non interattiva
@@ -82,7 +82,7 @@ sudo ./scripts/install.sh --profile balanced
 ```
 
 Il file `/etc/raspberry-wifi-portal/portal.env` viene conservato. Le opzioni passate allo script aggiornano solo i valori corrispondenti.
-Se il file contiene ancora un vecchio titolo di default, come `Raspberry Pi Wi-Fi Setup` o `Wi-Fi Setup`, l'installer lo migra a `Pi Network Manager`.
+Se il file contiene ancora un vecchio titolo di default, come `Raspberry Pi Wi-Fi Setup`, `Wi-Fi Setup` o `Pi Network Manager`, l'installer lo migra a `VT Network Manager`.
 
 Se l'interfaccia non cambia dopo un aggiornamento:
 

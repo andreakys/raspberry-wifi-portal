@@ -12,6 +12,8 @@ New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 
 tar.exe `
   --exclude="$ProjectName/.agents" `
+  --exclude="$ProjectName/.codex" `
+  --exclude="$ProjectName/.codex-remote-attachments" `
   --exclude="$ProjectName/.git" `
   --exclude="$ProjectName/.venv" `
   --exclude="$ProjectName/release" `

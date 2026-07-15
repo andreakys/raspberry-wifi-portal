@@ -162,6 +162,7 @@ h3 {
 .status-grid strong {
   display: block;
   margin-top: 6px;
+  overflow-wrap: anywhere;
 }
 
 .status-grid small {
@@ -169,6 +170,22 @@ h3 {
   margin-top: 4px;
   color: var(--muted);
   overflow-wrap: anywhere;
+}
+
+.temperature-card.temperature-watch {
+  border-color: rgba(202, 138, 4, 0.38);
+  background: rgba(254, 249, 195, 0.72);
+}
+
+.temperature-card.temperature-high,
+.temperature-card.temperature-critical {
+  border-color: rgba(185, 28, 28, 0.38);
+  background: rgba(254, 226, 226, 0.78);
+}
+
+.temperature-card.temperature-high strong,
+.temperature-card.temperature-critical strong {
+  color: var(--danger);
 }
 
 .label {
@@ -477,6 +494,26 @@ select:focus {
   margin-top: 24px;
 }
 
+.document-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px 20px;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.document-actions strong,
+.document-actions small {
+  display: block;
+}
+
+.document-actions small {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
 .secondary-link {
   color: var(--accent-strong);
   text-decoration: none;
@@ -544,6 +581,66 @@ select:focus {
   margin: 8px 0;
 }
 
+.quick-guide-sheet {
+  max-width: 920px;
+}
+
+.quick-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.quick-summary > div {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.quick-summary strong {
+  display: block;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+
+.quick-section {
+  break-inside: avoid;
+}
+
+.quick-note {
+  padding: 12px 14px;
+  border-left: 4px solid var(--accent);
+  background: #f8fbff;
+}
+
+.temperature-table {
+  width: 100%;
+  margin-top: 14px;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.temperature-table th,
+.temperature-table td {
+  padding: 9px 10px;
+  text-align: left;
+  border: 1px solid var(--line);
+}
+
+.temperature-table th {
+  background: #e8f1fb;
+}
+
+.quick-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
 @media (max-width: 860px) {
   .content-grid {
     grid-template-columns: 1fr;
@@ -576,6 +673,14 @@ select:focus {
   .connection-item .secondary-button {
     width: 100%;
   }
+
+  .document-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .document-actions .secondary-button {
+    width: 100%;
+  }
 }
 
 @media (max-width: 520px) {
@@ -584,6 +689,10 @@ select:focus {
   }
 
   .print-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-summary {
     grid-template-columns: 1fr;
   }
 }

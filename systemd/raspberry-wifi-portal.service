@@ -1,5 +1,5 @@
 [Unit]
-Description=Pi Network Manager Portal
+Description=VT Network Manager Portal
 Wants=NetworkManager.service network-online.target
 After=NetworkManager.service network-online.target
 

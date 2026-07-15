@@ -12,6 +12,8 @@ ARCHIVE_PATH="${OUTPUT_DIR}/${ARCHIVE_NAME}"
 mkdir -p "${OUTPUT_DIR}"
 tar \
   --exclude="${PROJECT_NAME}/.agents" \
+  --exclude="${PROJECT_NAME}/.codex" \
+  --exclude="${PROJECT_NAME}/.codex-remote-attachments" \
   --exclude="${PROJECT_NAME}/.git" \
   --exclude="${PROJECT_NAME}/.venv" \
   --exclude="${PROJECT_NAME}/release" \

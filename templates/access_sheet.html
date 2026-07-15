@@ -48,9 +48,9 @@
       <section class="print-notes">
         <h2>Interfacce rilevate</h2>
         <p>
-          Hotspot: <strong>{{ status.hotspot_interface }}</strong>.
-          Wi-Fi client: <strong>{{ status.client_wifi_interface }}</strong>.
-          Interfacce Wi-Fi: <strong>{{ status.wifi_interface_names|join(", ") or "n/d" }}</strong>.
+          Hotspot: <strong>{{ status.hotspot_interface_label }}</strong>.
+          Wi-Fi client attiva: <strong>{{ status.active_client_interface_label or "Nessuna" }}</strong>.
+          Interfacce Wi-Fi rilevate: <strong>{{ status.wifi_interface_labels|join(", ") or "Nessuna" }}</strong>.
         </p>
         <p class="muted">Conservare questa scheda con cura: contiene password operative.</p>
       </section>

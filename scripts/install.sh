@@ -279,8 +279,8 @@ if [[ -z "${existing_portal_session_secret}" ]]; then
 fi
 
 existing_portal_title="$(get_env_value PORTAL_TITLE)"
-if [[ -z "${existing_portal_title}" || "${existing_portal_title}" == "Raspberry Pi Wi-Fi Setup" || "${existing_portal_title}" == "Wi-Fi Setup" ]]; then
-  set_env_value "PORTAL_TITLE" "Pi Network Manager"
+if [[ -z "${existing_portal_title}" || "${existing_portal_title}" == "Raspberry Pi Wi-Fi Setup" || "${existing_portal_title}" == "Wi-Fi Setup" || "${existing_portal_title}" == "Pi Network Manager" ]]; then
+  set_env_value "PORTAL_TITLE" "VT Network Manager"
 fi
 
 [[ -z "${HOTSPOT_SSID_VALUE}" ]] || set_env_value "HOTSPOT_SSID" "${HOTSPOT_SSID_VALUE}"

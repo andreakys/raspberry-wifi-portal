@@ -33,8 +33,12 @@
             <strong>{{ status.hotspot_interface_label }}</strong>
           </article>
           <article>
-            <span class="label">Wi-Fi client attiva</span>
-            <strong>{{ status.active_client_interface_label or "Nessuna" }}</strong>
+            <span class="label">Radio Wi-Fi client</span>
+            <strong>{{ status.client_wifi_interface_label }}</strong>
+            <small>
+              {{ status.client_wifi_interface_state }}
+              {% if status.dual_wifi_client_policy %} - dongle USB prioritario{% endif %}
+            </small>
           </article>
           <article>
             <span class="label">Interfacce Wi-Fi</span>
@@ -211,8 +215,14 @@
               <span>Interfaccia radio</span>
               <select name="wifi_interface" id="wifi-interface">
                 {% for interface in status.wifi_interfaces %}
-                <option value="{{ interface.name }}" {% if interface.name == status.client_wifi_interface %}selected{% endif %}>
-                  {{ interface.display_name }} - {{ interface.state }}{% if interface.connection %} ({{ interface.connection }}){% endif %}
+                <option
+                  value="{{ interface.name }}"
+                  {% if interface.name == status.client_wifi_interface %}selected{% endif %}
+                  {% if not interface.client_selectable %}disabled{% endif %}
+                >
+                  {{ interface.display_name }} - {{ interface.state }}
+                  {% if interface.connection %} ({{ interface.connection }}){% endif %}
+                  {% if not interface.client_selectable %} - riservata all'hotspot{% endif %}
                 </option>
                 {% else %}
                 <option value="">Nessuna interfaccia Wi-Fi rilevata</option>

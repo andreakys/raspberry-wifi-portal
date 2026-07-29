@@ -62,6 +62,7 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 - pulsante di scansione reti Wi-Fi disponibili
 - scansione adattiva con riavvio temporaneo hotspot soltanto quando la radio selezionata lo richiede
 - separazione opzionale tra interfaccia hotspot e interfaccia Wi-Fi client
+- priorita' automatica al dongle `wlan1` per il client quando sono presenti entrambe le radio
 - supporto `WPA2/WPA3 Personal`
 - supporto base `802.1X` con `PEAP`, `TTLS`, `TLS`
 - visualizzazione degli indirizzi IPv4 correnti di Wi-Fi e LAN
@@ -246,9 +247,9 @@ Se la radio selezionata sta anche gestendo l'hotspot, ad esempio `wlan0`, il por
 
 Se accedi dal PC tramite cavo LAN, lo stesso pulsante puo' spegnere temporaneamente l'hotspot e aggiornare direttamente la lista senza perdere la pagina. Se invece selezioni `wlan1` mentre l'hotspot usa `wlan0`, esegue una normale scansione sulla seconda radio e l'hotspot rimane attivo. Avviso e comportamento cambiano subito quando scegli una radio diversa.
 
-Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` in alto: `1` indica solo la radio della scheda, `2` con nomi come `wlan0, wlan1` indica anche un dongle USB. Nel form `Configura collegamento Wi-Fi` puoi scegliere `Interfaccia radio` per decidere su quale radio attivare la connessione finale.
+Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` in alto: `1` indica solo la radio della scheda, `2` con nomi come `wlan0, wlan1` indica anche un dongle USB. Quando entrambe sono presenti, il portale seleziona automaticamente `wlan1` per scansione e connessione finale e riserva `wlan0` all'hotspot.
 
-Se la scansione non segue la radio selezionata o compaiono ancora due pulsanti, verifica che il portale mostri almeno la versione `1.14.1`: questa release introduce il pulsante unico adattivo. La versione `1.14.0` ha aggiunto il server locale di stato rete.
+Se con entrambe le radio il form permette ancora di usare `wlan0` per il client, verifica che il portale mostri almeno la versione `1.15.0`. La versione `1.14.1` ha introdotto il pulsante unico adattivo e la versione `1.14.0` il server locale di stato rete.
 
 ### 4. Provisioning
 
@@ -271,7 +272,7 @@ Il backend crea una nuova connessione `NetworkManager`, restituisce subito una p
 | `PORTAL_SESSION_SECRET` | generata dall'installer | Chiave server per firmare la sessione di login |
 | `WIFI_INTERFACE` | `wlan0` | Interfaccia Wi-Fi storica, usata come default per hotspot e client |
 | `HOTSPOT_INTERFACE` | valore di `WIFI_INTERFACE` | Interfaccia Wi-Fi dedicata all'hotspot temporaneo |
-| `CLIENT_WIFI_INTERFACE` | valore di `WIFI_INTERFACE` | Interfaccia Wi-Fi usata per scansione e connessione alla rete finale |
+| `CLIENT_WIFI_INTERFACE` | valore di `WIFI_INTERFACE` | Fallback per la radio client; con `wlan0` e `wlan1` presenti viene usata sempre `wlan1` |
 | `HOTSPOT_CONNECTION_NAME` | `Pi Setup AP` | Nome profilo NetworkManager |
 | `HOTSPOT_SSID` | `Pi-Setup` | SSID dell'hotspot |
 | `HOTSPOT_PASSWORD` | `ChangeMe123!` | Password WPA dell'hotspot |
@@ -333,7 +334,7 @@ python3 -c "import socket; s=socket.create_connection(('127.0.0.1', 6001)); prin
 
 Il dongle Wi-Fi USB non e' obbligatorio. Il portale funziona anche con la sola radio Wi-Fi integrata.
 
-Nell'interfaccia `wlan0` e' indicata come `Wi-Fi integrata`. `wlan1` e' indicata come `dongle USB Wi-Fi` e viene mostrata soltanto quando NetworkManager la rileva realmente. Se il dongle non e' presente, wlan1 non compare nei riquadri o nel selettore radio.
+Nell'interfaccia `wlan0` e' indicata come `Wi-Fi integrata`. `wlan1` e' indicata come `dongle USB Wi-Fi` e viene mostrata soltanto quando NetworkManager la rileva realmente. Se il dongle non e' presente, wlan1 non compare e il portale usa wlan0 sia per hotspot sia per client.
 
 Scenario con sola Wi-Fi integrata:
 
@@ -355,8 +356,11 @@ Con questa configurazione:
 
 - `wlan0` mantiene attivo l'hotspot temporaneo `Pi-Setup`
 - `wlan1` scansiona le reti e prova la connessione alla rete finale
+- `wlan0` non puo' essere selezionata come radio client finche' entrambe sono presenti
 - il telefono puo' restare collegato al portale mentre il Raspberry tenta la connessione con l'altra interfaccia
 - se la connessione finale riesce, l'hotspot temporaneo viene spento come nel flusso standard
+
+La scelta e' automatica anche se il file `portal.env` contiene ancora `CLIENT_WIFI_INTERFACE=wlan0`: quando NetworkManager rileva sia wlan0 sia wlan1, il portale usa sempre wlan1. All'avvio, i profili Wi-Fi creati dal portale in versioni precedenti vengono associati al dongle; se uno era attivo su wlan0, viene riattivato su wlan1.
 
 I nomi reali possono cambiare in base al dongle e alle regole di sistema. Sul Raspberry verifica con:
 
@@ -364,7 +368,7 @@ I nomi reali possono cambiare in base al dongle e alle regole di sistema. Sul Ra
 nmcli device status
 ```
 
-Se non imposti `HOTSPOT_INTERFACE` e `CLIENT_WIFI_INTERFACE`, il comportamento resta quello storico: entrambe usano `WIFI_INTERFACE`.
+Con la sola wlan0, `CLIENT_WIFI_INTERFACE` e `WIFI_INTERFACE` continuano a funzionare come fallback. La priorita' automatica a wlan1 si applica soltanto quando entrambe le radio sono realmente rilevate.
 
 ## Recovery automatico hotspot
 
@@ -542,7 +546,7 @@ grep -E 'PORTAL_TITLE|APP_VERSION' /etc/raspberry-wifi-portal/portal.env
 sudo systemctl restart raspberry-wifi-portal.service
 ```
 
-Il portale aggiornato mostra un badge `Versione 1.14.1`, il titolo `VT Network Manager`, il campo `Interfaccia radio`, il riquadro `Temperatura dispositivo` con stato termico, le etichette `wlan0 - Wi-Fi integrata` e, solo se presente, `wlan1 - dongle USB Wi-Fi`, oltre alla sezione `Documenti utente` con guida rapida e scheda accesso. La scansione usa un solo pulsante adattivo e il riepilogo rete locale resta disponibile su `127.0.0.1:6001`. Se non trovi queste funzioni, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
+Il portale aggiornato mostra un badge `Versione 1.15.0`, il titolo `VT Network Manager`, la scheda `Radio Wi-Fi client`, il riquadro `Temperatura dispositivo` con stato termico, le etichette `wlan0 - Wi-Fi integrata` e, solo se presente, `wlan1 - dongle USB Wi-Fi`, oltre alla sezione `Documenti utente`. Con due radio, wlan1 e' selezionata automaticamente e wlan0 appare riservata all'hotspot. Se non trovi queste funzioni, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
 
 ## Aggiornamento
 

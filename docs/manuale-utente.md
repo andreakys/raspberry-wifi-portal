@@ -2,7 +2,7 @@
 
 ## VT Network Manager
 
-Versione documento: 1.14.1
+Versione documento: 1.15.0
 Data: 15 luglio 2026
 
 ## 1. Scopo
@@ -22,6 +22,7 @@ Il sistema crea un hotspot temporaneo chiamato `Pi-Setup` quando il Raspberry no
 - scansione manuale delle reti Wi-Fi disponibili dal portale
 - scansione adattiva con riavvio temporaneo hotspot soltanto quando la radio selezionata lo richiede
 - separazione opzionale tra hotspot e Wi-Fi client con due interfacce
+- utilizzo automatico del dongle wlan1 per il client quando entrambe le radio sono presenti
 - supporto reti Open
 - supporto reti WPA2/WPA3 Personal
 - supporto base reti aziendali 802.1X: `PEAP`, `TTLS`, `TLS`
@@ -184,7 +185,7 @@ HOTSPOT_COOLDOWN_SECONDS=90
 
 ### 6.2 Scenari con una o due interfacce Wi-Fi
 
-Il dongle Wi-Fi USB non e' obbligatorio. Il portale funziona anche con la sola radio Wi-Fi integrata.
+Il dongle Wi-Fi USB non e' obbligatorio. Il portale funziona anche con la sola radio Wi-Fi integrata. Quando invece NetworkManager rileva sia wlan0 sia wlan1, la regola operativa e' fissa: wlan0 resta all'hotspot e wlan1 viene usata per scansione e connessione finale.
 
 Nel portale le radio vengono indicate cosi':
 
@@ -211,8 +212,11 @@ Con questa configurazione:
 
 - `wlan0` mantiene attivo l'hotspot temporaneo `Pi-Setup`
 - `wlan1` scansiona le reti e prova la connessione alla rete finale
+- `wlan0` viene mostrata come riservata all'hotspot e non puo' essere scelta nel form client
 - il telefono puo' restare collegato al portale mentre il Raspberry tenta la connessione con l'altra interfaccia
 - se la connessione finale riesce, l'hotspot temporaneo viene spento come nel flusso standard
+
+La versione `1.15.0` applica questa regola automaticamente anche se `portal.env` conserva il vecchio valore `CLIENT_WIFI_INTERFACE=wlan0`. All'avvio, i profili Wi-Fi creati dal portale in versioni precedenti vengono associati a wlan1. Se uno di questi profili era attivo su wlan0, il servizio prova a riattivarlo sul dongle.
 
 I nomi reali possono cambiare in base al dongle. Verifica sul Raspberry con:
 
@@ -220,7 +224,7 @@ I nomi reali possono cambiare in base al dongle. Verifica sul Raspberry con:
 nmcli device status
 ```
 
-Se non imposti `HOTSPOT_INTERFACE` e `CLIENT_WIFI_INTERFACE`, entrambe usano il valore di `WIFI_INTERFACE`.
+Con la sola wlan0, `CLIENT_WIFI_INTERFACE` e `WIFI_INTERFACE` restano i valori di fallback. La priorita' wlan1 viene applicata soltanto quando entrambe le radio sono rilevate.
 
 ### 6.3 Riavvio del servizio
 
@@ -449,7 +453,7 @@ Se la radio selezionata sta gestendo anche l'hotspot, per esempio `wlan0`, il po
 
 Se accedi al portale da un PC collegato via cavo LAN, lo stesso pulsante spegne l'hotspot per pochi secondi quando necessario, cerca le reti e aggiorna la lista restando raggiungibile tramite LAN.
 
-Nota versione: dalla versione `1.14.1` la scansione usa un solo pulsante adattivo e avviso e azione seguono immediatamente la radio selezionata. Dalla versione `1.14.0` il portale espone anche il riepilogo rete TCP locale. Dalla versione `1.13.0` usa il nome `VT Network Manager`, distingue chiaramente Wi-Fi integrata e dongle USB, mostra lo stato termico e offre una guida rapida stampabile.
+Nota versione: dalla versione `1.15.0`, con entrambe le radio presenti, wlan1 e' obbligatoria per il client e i profili gestiti vengono migrati automaticamente. Dalla versione `1.14.1` la scansione usa un solo pulsante adattivo. Dalla versione `1.14.0` il portale espone anche il riepilogo rete TCP locale.
 
 Quando `Scansiona reti` deve interrompere temporaneamente l'hotspot:
 
@@ -459,7 +463,7 @@ Quando `Scansiona reti` deve interrompere temporaneamente l'hotspot:
 4. l'hotspot viene riattivato automaticamente
 5. devi ricollegarti a `Pi-Setup` e aggiornare la pagina
 
-Con due interfacce Wi-Fi, ad esempio hotspot su `wlan0` e client su `wlan1`, seleziona `wlan1`: non serve spegnere l'hotspot e l'avviso scompare. Se torni a `wlan0`, l'avviso ricompare e il pulsante applica il flusso con disconnessione temporanea.
+Con due interfacce Wi-Fi, wlan1 viene selezionata automaticamente: non serve spegnere l'hotspot e l'avviso non compare. wlan0 resta visibile nello stato delle interfacce, ma nel form client e' disabilitata e indicata come riservata all'hotspot.
 
 Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` nella parte alta del portale. `wlan0 - Wi-Fi integrata` e' la radio della scheda. `wlan1 - dongle USB Wi-Fi` compare solo quando il dongle e' presente e rilevato. Se wlan1 non compare, non devi configurarla.
 
@@ -467,10 +471,11 @@ Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce 
 
 La sezione `Configura collegamento Wi-Fi` raccoglie interfaccia radio, SSID, tipo di sicurezza e credenziali della rete finale.
 
-Nel campo `Interfaccia radio` scegli su quale radio attivare la connessione:
+Nel campo `Interfaccia radio` viene applicata questa regola:
 
-- `wlan0 - Wi-Fi integrata` se vuoi usare la radio della scheda o se hai una sola radio
-- `wlan1 - dongle USB Wi-Fi` se il dongle e' presente e vuoi lasciare wlan0 all'hotspot temporaneo
+- con la sola radio integrata viene usata `wlan0`
+- con wlan0 e wlan1 presenti viene selezionata e accettata soltanto `wlan1 - dongle USB Wi-Fi`
+- wlan0 resta visibile ma disabilitata come radio client, perche' e' riservata all'hotspot temporaneo
 
 Per una rete WPA2/WPA3 Personal compila:
 
@@ -630,6 +635,7 @@ Verifica nel portale la presenza di:
 - riquadro `Temperatura dispositivo` con stato termico
 - riquadro `Interfacce Wi-Fi`
 - campo `Interfaccia radio` nella configurazione Wi-Fi
+- scheda `Radio Wi-Fi client` che mostra wlan1 come dongle prioritario quando presente
 - sezione `Interfacce di rete e indirizzi IP` subito sotto il riepilogo iniziale
 - lista `Reti visibili` compatta e scorrevole quando ci sono molte reti
 - pulsante `Mostra` sui campi password

@@ -124,8 +124,38 @@ class NetworkManagerService:
         normalized_type = connection_type.strip().lower()
         return normalized_type in WIFI_CONNECTION_TYPES or normalized_type in ETHERNET_CONNECTION_TYPES
 
+    def preferred_client_wifi_interface(
+        self, available_names: set[str] | None = None
+    ) -> str:
+        names = (
+            available_names
+            if available_names is not None
+            else self._wifi_device_names()
+        )
+        if {"wlan0", "wlan1"}.issubset(names):
+            return "wlan1"
+        if self.config.client_wifi_interface in names:
+            return self.config.client_wifi_interface
+        if "wlan1" in names:
+            return "wlan1"
+        if "wlan0" in names:
+            return "wlan0"
+        if names:
+            return sorted(names)[0]
+        return self.config.client_wifi_interface
+
+    @staticmethod
+    def client_wifi_interface_is_selectable(
+        interface: str, available_names: set[str]
+    ) -> bool:
+        if {"wlan0", "wlan1"}.issubset(available_names):
+            return interface == "wlan1"
+        return interface in available_names
+
     def active_connection_name(self) -> str | None:
-        return self.active_connection_name_for_device(self.config.client_wifi_interface)
+        return self.active_connection_name_for_device(
+            self.preferred_client_wifi_interface()
+        )
 
     def active_connection_name_for_device(self, interface: str) -> str | None:
         result = self._run_nmcli("-t", "-f", "DEVICE,STATE,CONNECTION", "device", "status")
@@ -139,7 +169,11 @@ class NetworkManagerService:
         return None
 
     def device_state(self, interface: str | None = None) -> str:
-        target_interface = interface or self.active_client_interface_name() or self.config.client_wifi_interface
+        target_interface = (
+            interface
+            or self.active_client_interface_name()
+            or self.preferred_client_wifi_interface()
+        )
         result = self._run_nmcli("-t", "-f", "DEVICE,STATE", "device", "status")
         for line in result.stdout.splitlines():
             parts = line.split(":", 1)
@@ -160,18 +194,30 @@ class NetworkManagerService:
 
     def active_client_status(self) -> dict[str, str | None]:
         result = self._run_nmcli("-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "device", "status")
+        wifi_names: set[str] = set()
+        candidates: list[dict[str, str | None]] = []
         fallback: dict[str, str | None] = {"interface": None, "connection": None, "state": None}
         for line in result.stdout.splitlines():
             parts = line.split(":", 3)
             if len(parts) != 4:
                 continue
             device, device_type, state, connection = parts
-            if device_type != "wifi" or state not in {"connected", "connecting"}:
+            if device_type != "wifi":
+                continue
+            wifi_names.add(device)
+            if state not in {"connected", "connecting"}:
                 continue
             if not connection or connection == "--" or connection == self.config.hotspot_connection_name:
                 continue
-            status = {"interface": device, "connection": connection, "state": state}
-            if state == "connected":
+            candidates.append(
+                {"interface": device, "connection": connection, "state": state}
+            )
+
+        preferred_interface = self.preferred_client_wifi_interface(wifi_names)
+        for status in candidates:
+            if status["interface"] != preferred_interface:
+                continue
+            if status["state"] == "connected":
                 return status
             fallback = status
         return fallback
@@ -179,21 +225,53 @@ class NetworkManagerService:
     def current_status(self) -> dict[str, Any]:
         interfaces = self.list_ip_interfaces()
         wifi_interfaces = self._wifi_interfaces(interfaces)
+        wifi_interface_names = {item["name"] for item in wifi_interfaces}
+        client_wifi_interface = self.preferred_client_wifi_interface(
+            wifi_interface_names
+        )
+        dual_wifi_policy = {"wlan0", "wlan1"}.issubset(wifi_interface_names)
+        for interface in wifi_interfaces:
+            interface["client_preferred"] = interface["name"] == client_wifi_interface
+            interface["client_selectable"] = self.client_wifi_interface_is_selectable(
+                interface["name"], wifi_interface_names
+            )
         active_client_status = self.active_client_status()
         active_client_interface = active_client_status.get("interface")
+        client_interface_status = next(
+            (
+                item
+                for item in wifi_interfaces
+                if item["name"] == client_wifi_interface
+            ),
+            {},
+        )
         return {
             "wifi_interface": self.config.wifi_interface,
             "hotspot_interface": self.config.hotspot_interface,
-            "client_wifi_interface": self.config.client_wifi_interface,
+            "client_wifi_interface": client_wifi_interface,
+            "client_wifi_interface_label": self.interface_display_name(
+                client_wifi_interface
+            ),
+            "client_wifi_interface_state": client_interface_status.get(
+                "state", "unknown"
+            ),
+            "dual_wifi_client_policy": dual_wifi_policy,
             "wifi_interfaces": wifi_interfaces,
             "wifi_interface_names": [item["name"] for item in wifi_interfaces],
             "wifi_interface_labels": [item["display_name"] for item in wifi_interfaces],
             "wifi_interface_count": len(wifi_interfaces),
-            "has_separate_wifi_interfaces": self.config.hotspot_interface != self.config.client_wifi_interface,
+            "has_separate_wifi_interfaces": (
+                self.config.hotspot_interface != client_wifi_interface
+            ),
             "board_temperature": self.board_temperature(),
             "connectivity": self.connectivity(),
-            "device_state": active_client_status.get("state") or self.device_state(),
-            "active_connection": self.active_connection_name(),
+            "device_state": (
+                active_client_status.get("state")
+                or self.device_state(client_wifi_interface)
+            ),
+            "active_connection": self.active_connection_name_for_device(
+                client_wifi_interface
+            ),
             "active_client_connection": active_client_status.get("connection"),
             "active_client_interface": active_client_interface,
             "active_client_interface_label": (
@@ -219,6 +297,46 @@ class NetworkManagerService:
             if self._is_wifi_connection_type(connection_type) and name != self.config.hotspot_connection_name:
                 return True
         return False
+
+    def apply_client_interface_policy(self) -> list[str]:
+        wifi_device_names = self._wifi_device_names()
+        if not {"wlan0", "wlan1"}.issubset(wifi_device_names):
+            return []
+
+        preferred_interface = self.preferred_client_wifi_interface(
+            wifi_device_names
+        )
+        migrated_connections: list[str] = []
+        for connection in self.list_managed_connections():
+            if not self._is_wifi_connection_type(str(connection.get("type", ""))):
+                continue
+
+            connection_name = str(connection["name"])
+            self._run_nmcli(
+                "connection",
+                "modify",
+                connection_name,
+                "connection.interface-name",
+                preferred_interface,
+            )
+            migrated_connections.append(connection_name)
+
+            active_device = str(connection.get("device", ""))
+            if active_device and active_device != preferred_interface:
+                self._run_nmcli(
+                    "connection", "down", connection_name, check=False
+                )
+                self._run_nmcli(
+                    "connection",
+                    "up",
+                    connection_name,
+                    "ifname",
+                    preferred_interface,
+                    check=False,
+                    timeout=self.config.connection_wait_seconds,
+                )
+
+        return migrated_connections
 
     def list_managed_connections(self) -> list[dict[str, Any]]:
         result = self._run_nmcli(
@@ -504,8 +622,11 @@ class NetworkManagerService:
         return None
 
     def list_networks(self, wifi_interface: str | None = None) -> list[dict[str, str]]:
-        target_interface = wifi_interface or self.config.client_wifi_interface
-        if target_interface not in self._wifi_device_names():
+        wifi_device_names = self._wifi_device_names()
+        target_interface = wifi_interface or self.preferred_client_wifi_interface(
+            wifi_device_names
+        )
+        if target_interface not in wifi_device_names:
             raise NetworkManagerError(f"Interfaccia Wi-Fi non valida: {target_interface}")
 
         result = self._run_nmcli(
@@ -762,9 +883,17 @@ class NetworkManagerService:
         if not payload.get("ssid", "").strip():
             return "Inserisci l'SSID della rete."
 
-        target_interface = self._target_wifi_interface(payload)
-        if target_interface not in self._wifi_device_names():
+        wifi_device_names = self._wifi_device_names()
+        target_interface = self._target_wifi_interface(payload, wifi_device_names)
+        if target_interface not in wifi_device_names:
             return "Seleziona una interfaccia Wi-Fi valida."
+        if not self.client_wifi_interface_is_selectable(
+            target_interface, wifi_device_names
+        ):
+            return (
+                "Con Wi-Fi integrata e dongle USB presenti, la connessione client "
+                "deve usare wlan1. wlan0 resta riservata all'hotspot."
+            )
 
         security_mode = payload.get("security_mode")
         if security_mode not in {"open", "psk", "enterprise"}:
@@ -794,8 +923,13 @@ class NetworkManagerService:
 
         return None
 
-    def _target_wifi_interface(self, payload: dict[str, str]) -> str:
-        return payload.get("wifi_interface", "").strip() or self.config.client_wifi_interface
+    def _target_wifi_interface(
+        self, payload: dict[str, str], available_names: set[str] | None = None
+    ) -> str:
+        requested_interface = payload.get("wifi_interface", "").strip()
+        if requested_interface:
+            return requested_interface
+        return self.preferred_client_wifi_interface(available_names)
 
     def _wifi_device_names(self) -> set[str]:
         result = self._run_nmcli("-t", "-f", "DEVICE,TYPE", "device", "status", check=False)

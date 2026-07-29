@@ -42,12 +42,13 @@
         <ul>
           <li><strong>wlan0 - Wi-Fi integrata:</strong> radio presente sulla scheda.</li>
           {% if "wlan1" in status.wifi_interface_names %}
-          <li><strong>wlan1 - dongle USB Wi-Fi:</strong> seconda radio collegata alla porta USB.</li>
+          <li><strong>wlan1 - dongle USB Wi-Fi:</strong> radio usata automaticamente per scansione e connessione finale.</li>
           {% endif %}
         </ul>
         <p>
           Radio rilevate: <strong>{{ status.wifi_interface_labels|join(", ") or "Nessuna" }}</strong>.
-          Se il dongle USB non e' installato, wlan1 non compare e non serve configurarla.
+          Se il dongle USB non e' installato, wlan1 non compare e il portale usa wlan0 anche per la connessione finale.
+          Quando entrambe sono presenti, wlan0 resta riservata all'hotspot.
         </p>
       </section>
 
@@ -64,7 +65,7 @@
       <section class="print-notes quick-section">
         <h2>4. Configura il collegamento Wi-Fi</h2>
         <ol>
-          <li>In <strong>Interfaccia radio</strong> scegli wlan0 oppure il dongle wlan1, se presente.</li>
+          <li>Controlla <strong>Interfaccia radio</strong>: con due radio viene selezionata automaticamente wlan1.</li>
           <li>Premi <strong>Scansiona reti</strong> e seleziona la rete dall'elenco.</li>
           <li>Controlla SSID, sicurezza e password.</li>
           <li>Premi <strong>Salva e connetti</strong>.</li>
@@ -72,8 +73,8 @@
         <p class="quick-note">
           Con una sola radio, hotspot e Wi-Fi client condividono wlan0: durante il cambio rete il telefono puo'
           perdere temporaneamente il collegamento. Anche la scansione puo' richiedere una breve disconnessione:
-          il portale mostra prima una conferma. Con il dongle, seleziona wlan1 per cercare le reti senza spegnere
-          l'hotspot mantenuto da wlan0.
+          il portale mostra prima una conferma. Quando il dongle e' presente, il portale usa wlan1 per cercare
+          e configurare la rete finale senza spegnere l'hotspot mantenuto da wlan0.
         </p>
       </section>
 

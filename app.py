@@ -231,6 +231,21 @@ def _bootstrap_network_manager() -> None:
             reason="wifi-enable-failed",
             message="Impossibile attivare subito il Wi-Fi; il monitor continuera' a riprovare.",
         )
+        return
+
+    try:
+        migrated_connections = network_manager.apply_client_interface_policy()
+        if migrated_connections:
+            app.logger.info(
+                "Profili Wi-Fi associati automaticamente a wlan1: %s",
+                ", ".join(migrated_connections),
+            )
+    except NetworkManagerError as error:
+        detail = error.stderr or error.stdout or str(error)
+        app.logger.warning(
+            "Migrazione automatica dei profili Wi-Fi verso wlan1 non riuscita: %s",
+            detail,
+        )
 
 
 def _render_index(
@@ -561,7 +576,10 @@ def api_status():
 @app.get("/api/networks")
 def api_networks():
     status = network_manager.current_status()
-    wifi_interface = request.args.get("wifi_interface", "").strip() or config.client_wifi_interface
+    wifi_interface = (
+        request.args.get("wifi_interface", "").strip()
+        or str(status.get("client_wifi_interface") or config.client_wifi_interface)
+    )
     scan_limited = bool(status.get("hotspot_active")) and status.get("hotspot_interface") == wifi_interface
     if scan_limited and _can_scan_without_losing_page(status):
         try:
@@ -611,7 +629,10 @@ def api_full_scan_state():
 def api_start_full_scan():
     status = network_manager.current_status()
     payload = request.get_json(silent=True) or request.form
-    wifi_interface = str(payload.get("wifi_interface", "")).strip() or config.client_wifi_interface
+    wifi_interface = (
+        str(payload.get("wifi_interface", "")).strip()
+        or str(status.get("client_wifi_interface") or config.client_wifi_interface)
+    )
     if wifi_interface not in status.get("wifi_interface_names", []):
         return jsonify(
             {

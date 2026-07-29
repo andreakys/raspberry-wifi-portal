@@ -320,27 +320,12 @@
           <div class="panel-header panel-header-row">
             <div>
               <h2>Reti visibili</h2>
-              <p>Scansione live della radio Wi-Fi selezionata.</p>
+              <p>Cerca le reti usando l'interfaccia radio selezionata.</p>
             </div>
-            <button type="button" class="secondary-button" id="scan-networks-button">Scansiona</button>
+            <button type="button" class="secondary-button" id="scan-networks-button">Scansiona reti</button>
           </div>
 
-          {% if scan_limited %}
-          <div class="message warning">
-            Hotspot e Wi-Fi client usano entrambi {{ status.client_wifi_interface }}. La scansione live puo'
-            vedere solo {{ hotspot_ssid }}.
-            {% if lan_safe_scan %}
-            Sei collegato tramite LAN: il pulsante Scansiona puo' spegnere l'hotspot per pochi secondi e aggiornare qui la lista.
-            {% else %}
-            Per cercare le reti vicine spegniamo l'hotspot per pochi secondi con Scansione completa.
-            {% endif %}
-          </div>
-          {% if not lan_safe_scan %}
-          <button type="button" class="secondary-button full-width-button" id="full-scan-button">
-            Scansione completa
-          </button>
-          {% endif %}
-          {% endif %}
+          <div class="message warning hidden" id="scan-guidance"></div>
 
           {% if full_scan.state in ["running", "completed", "error"] %}
           <div class="message {% if full_scan.state == 'error' %}error{% else %}info{% endif %}">
@@ -407,10 +392,17 @@
       const ipMode = document.getElementById("ip-mode");
       const staticIpFields = document.getElementById("static-ip-fields");
       const scanButton = document.getElementById("scan-networks-button");
-      const fullScanButton = document.getElementById("full-scan-button");
+      const scanGuidance = document.getElementById("scan-guidance");
       const scanStatus = document.getElementById("scan-status");
       const networkCount = document.getElementById("network-count");
       const networkList = document.getElementById("network-list");
+      const scanContext = {
+        hotspotActive: {{ status.hotspot_active|tojson }},
+        hotspotInterface: {{ status.hotspot_interface|tojson }},
+        hotspotSsid: {{ hotspot_ssid|tojson }},
+        canPauseSafely: {{ scan_can_pause_safely|tojson }},
+        requestViaHotspot: {{ request_via_hotspot|tojson }},
+      };
 
       function bindPasswordToggles() {
         document.querySelectorAll("[data-password-toggle]").forEach((button) => {
@@ -491,11 +483,58 @@
         bindNetworkButtons();
       }
 
+      function selectedRadioNeedsHotspotPause() {
+        return scanContext.hotspotActive
+          && wifiInterface.value === scanContext.hotspotInterface;
+      }
+
+      function syncScanGuidance() {
+        if (!selectedRadioNeedsHotspotPause()) {
+          scanGuidance.classList.add("hidden");
+          scanGuidance.textContent = "";
+          return;
+        }
+
+        scanGuidance.classList.remove("hidden");
+        if (scanContext.requestViaHotspot) {
+          scanGuidance.textContent = `La radio selezionata sta gestendo ${scanContext.hotspotSsid}. Scansiona reti spegnera' temporaneamente l'hotspot: dovrai ricollegarti dopo alcuni secondi.`;
+        } else if (scanContext.canPauseSafely) {
+          scanGuidance.textContent = "La radio selezionata sta gestendo l'hotspot. La scansione lo spegnera' per pochi secondi, ma questa pagina restera' raggiungibile tramite l'altro collegamento.";
+        } else {
+          scanGuidance.textContent = "La radio selezionata sta gestendo l'hotspot. La scansione disponibile potrebbe rilevare soltanto la rete di configurazione.";
+        }
+      }
+
       async function scanNetworks() {
+        const requiresPause = selectedRadioNeedsHotspotPause();
+        if (
+          requiresPause
+          && scanContext.requestViaHotspot
+          && !window.confirm(
+            `Per scansionare questa radio dobbiamo spegnere temporaneamente ${scanContext.hotspotSsid}. Il telefono perdera' la connessione e dovrai ricollegarti. Continuare?`
+          )
+        ) {
+          return;
+        }
+
         scanButton.disabled = true;
         scanStatus.textContent = "Scansione reti Wi-Fi in corso...";
 
         try {
+          if (requiresPause && scanContext.requestViaHotspot) {
+            const response = await fetch("/api/networks/full-scan", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ wifi_interface: wifiInterface.value }),
+            });
+            if (!response.ok) {
+              throw new Error("full-scan-failed");
+            }
+            scanStatus.textContent = `Scansione avviata. Attendi 20-30 secondi, ricollegati a ${scanContext.hotspotSsid} e aggiorna questa pagina.`;
+            return;
+          }
+
           const params = new URLSearchParams({ wifi_interface: wifiInterface.value });
           const response = await fetch(`/api/networks?${params.toString()}`, { credentials: "same-origin" });
           if (!response.ok) {
@@ -512,29 +551,8 @@
       }
 
       scanButton.addEventListener("click", scanNetworks);
-
-      async function startFullScan() {
-        fullScanButton.disabled = true;
-        scanStatus.textContent = "Scansione completa avviata: il telefono perdera' Pi-Setup per alcuni secondi.";
-
-        try {
-          const response = await fetch("/api/networks/full-scan", {
-            method: "POST",
-            credentials: "same-origin",
-          });
-          if (!response.ok) {
-            throw new Error("full-scan-failed");
-          }
-          scanStatus.textContent = "Attendi 20-30 secondi, ricollegati a Pi-Setup e aggiorna questa pagina.";
-        } catch (error) {
-          scanStatus.textContent = "Impossibile avviare la scansione completa. Riprova tra qualche secondo.";
-          fullScanButton.disabled = false;
-        }
-      }
-
-      if (fullScanButton) {
-        fullScanButton.addEventListener("click", startFullScan);
-      }
+      wifiInterface.addEventListener("change", syncScanGuidance);
+      syncScanGuidance();
 
       bindNetworkButtons();
     </script>

@@ -2,7 +2,7 @@
 
 ## VT Network Manager
 
-Versione documento: 1.14.0
+Versione documento: 1.14.1
 Data: 15 luglio 2026
 
 ## 1. Scopo
@@ -20,7 +20,7 @@ Il sistema crea un hotspot temporaneo chiamato `Pi-Setup` quando il Raspberry no
 - pulsante di riavvio protetto da login
 - scheda accesso stampabile o salvabile in PDF dal browser
 - scansione manuale delle reti Wi-Fi disponibili dal portale
-- scansione completa con riavvio temporaneo hotspot quando si usa una sola radio Wi-Fi
+- scansione adattiva con riavvio temporaneo hotspot soltanto quando la radio selezionata lo richiede
 - separazione opzionale tra hotspot e Wi-Fi client con due interfacce
 - supporto reti Open
 - supporto reti WPA2/WPA3 Personal
@@ -439,19 +439,19 @@ Il pulsante `Riavvia` esegue un reboot del Raspberry tramite `systemctl reboot`.
 
 ### 7.5 Scansione reti Wi-Fi
 
-Nella sezione `Reti visibili` premi `Scansiona`.
+Nella sezione `Reti visibili` premi `Scansiona reti`.
 
-Il Raspberry forza una nuova scansione sull'interfaccia radio selezionata nel form `Configura collegamento Wi-Fi` e aggiorna la lista senza ricaricare tutta la pagina. Toccando una rete rilevata, il campo `SSID` viene compilato automaticamente.
+Il dispositivo usa sempre l'interfaccia radio selezionata nel form `Configura collegamento Wi-Fi` e aggiorna la lista senza ricaricare tutta la pagina. Toccando una rete rilevata, il campo `SSID` viene compilato automaticamente.
 
 La lista mostra tutte le celle Wi-Fi rilevate da NetworkManager, anche quelle con segnale debole. Se piu' access point trasmettono lo stesso SSID, vengono mostrati separatamente con segnale, canale e BSSID quando disponibili. Quando l'elenco e' lungo, il riquadro resta compatto e puoi scorrere solo la lista delle reti senza perdere il resto della pagina.
 
-Se `HOTSPOT_INTERFACE` e `CLIENT_WIFI_INTERFACE` sono la stessa radio, per esempio `wlan0`, la scansione live puo' vedere solo `Pi-Setup` mentre l'hotspot e' attivo. In questo caso il portale mostra anche `Scansione completa`.
+Se la radio selezionata sta gestendo anche l'hotspot, per esempio `wlan0`, il portale adatta automaticamente il pulsante. Dal telefono chiede conferma prima di spegnere temporaneamente l'hotspot; dopo la scansione devi ricollegarti a `Pi-Setup` e aggiornare la pagina.
 
-Se accedi al portale da un PC collegato via cavo LAN e la LAN e' presente, il pulsante `Scansiona` puo' fare direttamente una scansione completa: il portale spegne l'hotspot per pochi secondi, cerca le reti e aggiorna la lista restando raggiungibile tramite LAN.
+Se accedi al portale da un PC collegato via cavo LAN, lo stesso pulsante spegne l'hotspot per pochi secondi quando necessario, cerca le reti e aggiorna la lista restando raggiungibile tramite LAN.
 
-Nota versione: dalla versione `1.14.0` il portale espone anche il riepilogo rete TCP locale. Dalla versione `1.13.0` usa il nome `VT Network Manager`, distingue chiaramente Wi-Fi integrata e dongle USB, mostra lo stato termico e offre una guida rapida stampabile. Dalla versione `1.12.6` puoi scegliere la radio Wi-Fi su cui attivare la connessione finale e la scansione usa la stessa radio.
+Nota versione: dalla versione `1.14.1` la scansione usa un solo pulsante adattivo e avviso e azione seguono immediatamente la radio selezionata. Dalla versione `1.14.0` il portale espone anche il riepilogo rete TCP locale. Dalla versione `1.13.0` usa il nome `VT Network Manager`, distingue chiaramente Wi-Fi integrata e dongle USB, mostra lo stato termico e offre una guida rapida stampabile.
 
-Quando premi `Scansione completa`:
+Quando `Scansiona reti` deve interrompere temporaneamente l'hotspot:
 
 1. il portale avvia la scansione in background
 2. l'hotspot `Pi-Setup` viene spento per pochi secondi
@@ -459,7 +459,7 @@ Quando premi `Scansione completa`:
 4. l'hotspot viene riattivato automaticamente
 5. devi ricollegarti a `Pi-Setup` e aggiornare la pagina
 
-Con due interfacce Wi-Fi, ad esempio hotspot su `wlan0` e client su `wlan1`, non serve spegnere l'hotspot: la scansione live usa direttamente la radio client.
+Con due interfacce Wi-Fi, ad esempio hotspot su `wlan0` e client su `wlan1`, seleziona `wlan1`: non serve spegnere l'hotspot e l'avviso scompare. Se torni a `wlan0`, l'avviso ricompare e il pulsante applica il flusso con disconnessione temporanea.
 
 Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` nella parte alta del portale. `wlan0 - Wi-Fi integrata` e' la radio della scheda. `wlan1 - dongle USB Wi-Fi` compare solo quando il dongle e' presente e rilevato. Se wlan1 non compare, non devi configurarla.
 
@@ -624,7 +624,7 @@ sudo systemctl restart raspberry-wifi-portal.service
 Verifica nel portale la presenza di:
 
 - badge `Versione`
-- pulsante `Scansiona`
+- pulsante unico `Scansiona reti`
 - pulsante `Riavvia`
 - tasto `Esci`
 - riquadro `Temperatura dispositivo` con stato termico
@@ -705,8 +705,8 @@ sudo ./scripts/install.sh --profile balanced
 - controlla il badge versione
 - usa `Guida rapida configurazione` per consegnare all'utente le istruzioni dell'interfaccia web
 - usa `Scheda accesso` se devi stampare o salvare in PDF i dati di accesso
-- premi `Scansiona` per aggiornare le reti disponibili
-- se sei collegato via LAN, `Scansiona` puo' fare la scansione completa senza perdere la pagina
-- se vedi solo `Pi-Setup` e hai una sola radio Wi-Fi, usa `Scansione completa`
+- premi `Scansiona reti` per aggiornare le reti disponibili
+- se sei collegato via LAN, il pulsante puo' spegnere temporaneamente l'hotspot senza perdere la pagina
+- se sei collegato tramite hotspot sulla stessa radio, conferma la breve disconnessione e poi ricollegati
 - inserisci i dati della rete finale
 - attendi il tentativo di connessione

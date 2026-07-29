@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-APP_VERSION = "1.14.0"
+APP_VERSION = "1.14.1"
 DEFAULT_PORTAL_TITLE = "VT Network Manager"
 
 

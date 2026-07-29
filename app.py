@@ -15,6 +15,10 @@ from services.network_manager import (
     NetworkManagerService,
 )
 from services.network_status_tcp import NetworkStatusTcpServer, build_network_status_line
+from services.scan_policy import (
+    can_pause_hotspot_without_losing_page,
+    hotspot_blocks_scan,
+)
 
 config = load_config()
 network_manager = NetworkManagerService(config)
@@ -47,7 +51,7 @@ recovery_runtime = {
 }
 wifi_scan_state = {
     "state": "idle",
-    "message": "Nessuna scansione completa avviata.",
+    "message": "Nessuna scansione avviata.",
     "networks": [],
     "started_at": None,
     "completed_at": None,
@@ -67,13 +71,6 @@ def _access_sheet(status: dict[str, object]) -> dict[str, str]:
     }
 
 
-def _hotspot_blocks_client_scan(status: dict[str, object]) -> bool:
-    return (
-        bool(status.get("hotspot_active"))
-        and status.get("hotspot_interface") == status.get("client_wifi_interface")
-    )
-
-
 def _request_from_hotspot_network() -> bool:
     remote_addr = request.remote_addr or ""
     try:
@@ -85,7 +82,9 @@ def _request_from_hotspot_network() -> bool:
 
 
 def _can_scan_without_losing_page(status: dict[str, object]) -> bool:
-    return bool(status.get("lan_connected")) and not _request_from_hotspot_network()
+    return can_pause_hotspot_without_losing_page(
+        status, _request_from_hotspot_network()
+    )
 
 
 def _networks_are_only_hotspot(networks: list[dict[str, str]]) -> bool:
@@ -120,11 +119,11 @@ def _choose_visible_networks(live_networks: list[dict[str, str]], scan_limited: 
     return live_networks
 
 
-def _run_full_wifi_scan_cycle() -> None:
+def _run_full_wifi_scan_cycle(wifi_interface: str) -> None:
     _set_scan_state(
         state="running",
         message=(
-            "Scansione completa in corso: l'hotspot viene spento per pochi secondi "
+            "Scansione reti in corso: l'hotspot viene spento per pochi secondi "
             "e verra' riattivato automaticamente."
         ),
         started_at=int(time.time()),
@@ -134,11 +133,11 @@ def _run_full_wifi_scan_cycle() -> None:
     _pause_hotspot_recovery(config.hotspot_cooldown_seconds, "manual-full-scan")
 
     try:
-        visible_networks = _scan_networks_with_hotspot_paused()
+        visible_networks = _scan_networks_with_hotspot_paused(wifi_interface)
         _set_scan_state(
             state="completed",
             message=(
-                f"Scansione completa terminata: {len(visible_networks)} reti trovate. "
+                f"Scansione terminata: {len(visible_networks)} reti trovate. "
                 "Ricollegati all'hotspot e aggiorna questa pagina."
             ),
             networks=visible_networks,
@@ -153,7 +152,7 @@ def _run_full_wifi_scan_cycle() -> None:
             pass
         _set_scan_state(
             state="error",
-            message="Scansione completa non riuscita; hotspot riattivato se possibile.",
+            message="Scansione non riuscita; hotspot riattivato se possibile.",
             completed_at=int(time.time()),
             last_error=detail,
         )
@@ -245,8 +244,8 @@ def _render_index(
         live_networks = network_manager.list_networks()
     except NetworkManagerError:
         live_networks = []
-    scan_limited = _hotspot_blocks_client_scan(status)
-    lan_safe_scan = scan_limited and _can_scan_without_losing_page(status)
+    scan_limited = hotspot_blocks_scan(status)
+    scan_can_pause_safely = _can_scan_without_losing_page(status)
     networks = _choose_visible_networks(live_networks, scan_limited)
     return (
         render_template(
@@ -258,7 +257,8 @@ def _render_index(
             status=status,
             networks=networks,
             scan_limited=scan_limited,
-            lan_safe_scan=lan_safe_scan,
+            scan_can_pause_safely=scan_can_pause_safely,
+            request_via_hotspot=_request_from_hotspot_network(),
             full_scan=_scan_state_snapshot(),
             access_sheet=_access_sheet(status),
             error_message=error_message,
@@ -582,7 +582,7 @@ def api_networks():
                 {
                     "networks": networks,
                     "mode": "lan-full-scan",
-                    "message": "Scansione completa eseguita tramite LAN cablata.",
+                    "message": "Scansione eseguita tramite LAN cablata.",
                 }
             )
         except NetworkManagerError as error:
@@ -610,12 +610,23 @@ def api_full_scan_state():
 @app.post("/api/networks/full-scan")
 def api_start_full_scan():
     status = network_manager.current_status()
-    if not _hotspot_blocks_client_scan(status):
+    payload = request.get_json(silent=True) or request.form
+    wifi_interface = str(payload.get("wifi_interface", "")).strip() or config.client_wifi_interface
+    if wifi_interface not in status.get("wifi_interface_names", []):
+        return jsonify(
+            {
+                "ok": False,
+                "error": "invalid-wifi-interface",
+                "message": "Seleziona una interfaccia Wi-Fi valida.",
+            }
+        ), 400
+
+    if not hotspot_blocks_scan(status, wifi_interface):
         return jsonify(
             {
                 "ok": False,
                 "error": "full-scan-not-needed",
-                "message": "La scansione completa serve solo quando hotspot e Wi-Fi client usano la stessa interfaccia.",
+                "message": "La radio selezionata non richiede lo spegnimento temporaneo dell'hotspot.",
             }
         ), 400
 
@@ -623,13 +634,21 @@ def api_start_full_scan():
     if current_scan.get("state") == "running":
         return jsonify({"ok": True, "scan": current_scan})
 
-    worker = Thread(target=_run_full_wifi_scan_cycle, daemon=True)
+    worker = Thread(
+        target=_run_full_wifi_scan_cycle,
+        args=(wifi_interface,),
+        daemon=True,
+        name=f"wifi-full-scan-{wifi_interface}",
+    )
     worker.start()
     return jsonify(
         {
             "ok": True,
             "scan": _scan_state_snapshot(),
-            "message": "Scansione completa avviata. Il telefono perdera' Pi-Setup per alcuni secondi.",
+            "message": (
+                f"Scansione avviata su {wifi_interface}. "
+                f"Il telefono perdera' {config.hotspot_ssid} per alcuni secondi."
+            ),
         }
     )
 

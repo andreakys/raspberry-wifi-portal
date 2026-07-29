@@ -46,7 +46,7 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 2. apri `http://192.168.4.1`
 3. accedi con la password portale stampata dall'installer
 4. verifica che in alto compaia la versione corrente del portale
-5. premi `Scansiona` per aggiornare le reti visibili
+5. premi `Scansiona reti` per aggiornare le reti visibili
 6. inserisci o seleziona i dati della rete finale
 7. scegli un profilo recovery `stable`, `balanced` o `unstable` se necessario
 
@@ -60,7 +60,7 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 - pulsante di riavvio protetto da login
 - scheda accesso stampabile o salvabile in PDF dal browser
 - pulsante di scansione reti Wi-Fi disponibili
-- scansione completa con riavvio temporaneo hotspot quando esiste una sola radio Wi-Fi
+- scansione adattiva con riavvio temporaneo hotspot soltanto quando la radio selezionata lo richiede
 - separazione opzionale tra interfaccia hotspot e interfaccia Wi-Fi client
 - supporto `WPA2/WPA3 Personal`
 - supporto base `802.1X` con `PEAP`, `TTLS`, `TLS`
@@ -100,7 +100,8 @@ raspberry-wifi-portal/
 |-- services/
 |   |-- __init__.py
 |   |-- network_manager.py
-|   `-- network_status_tcp.py
+|   |-- network_status_tcp.py
+|   `-- scan_policy.py
 |-- static/
 |   `-- styles.css
 |-- systemd/
@@ -138,6 +139,9 @@ raspberry-wifi-portal/
 
 - `services/network_status_tcp.py`
   Compone il riepilogo testuale e gestisce il server TCP locale sulla porta `6001`.
+
+- `services/scan_policy.py`
+  Decide se la radio selezionata richiede lo spegnimento dell'hotspot e se il browser dispone di un collegamento alternativo sicuro.
 
 - `templates/index.html`
   Pagina principale con form di configurazione, scheda accesso stampabile e scansione reti.
@@ -236,15 +240,15 @@ Per `802.1X` supporta questi profili base:
 - `TTLS`
 - `TLS`
 
-La sezione `Reti visibili` include il pulsante `Scansiona`, che forza una nuova scansione dell'interfaccia radio selezionata nel form `Configura collegamento Wi-Fi` e aggiorna la lista senza ricaricare tutta la pagina. La lista mostra tutte le celle rilevate da NetworkManager, incluse quelle con segnale debole e piu' access point con lo stesso SSID; quando disponibili vengono mostrati anche canale e BSSID. Se l'elenco e' lungo, il riquadro resta compatto e la lista diventa scorrevole.
+La sezione `Reti visibili` include un solo pulsante `Scansiona reti`, che usa sempre l'interfaccia scelta nel form `Configura collegamento Wi-Fi` e aggiorna la lista senza ricaricare tutta la pagina. La lista mostra tutte le celle rilevate da NetworkManager, incluse quelle con segnale debole e piu' access point con lo stesso SSID; quando disponibili vengono mostrati anche canale e BSSID. Se l'elenco e' lungo, il riquadro resta compatto e la lista diventa scorrevole.
 
-Se hotspot e Wi-Fi client usano la stessa interfaccia, ad esempio `wlan0`, la scansione live puo' vedere solo l'hotspot `Pi-Setup` mentre la radio lavora in modalita' access point. In quel caso il portale mostra `Scansione completa`: spegne l'hotspot per pochi secondi, scansiona le reti vicine, riattiva `Pi-Setup` e conserva il risultato. Il telefono deve poi ricollegarsi all'hotspot e aggiornare la pagina.
+Se la radio selezionata sta anche gestendo l'hotspot, ad esempio `wlan0`, il portale adatta automaticamente l'azione. Dal telefono mostra una conferma, spegne l'hotspot per pochi secondi, cerca le reti, riattiva `Pi-Setup` e conserva il risultato; il telefono deve poi ricollegarsi e aggiornare la pagina.
 
-Se accedi dal PC tramite cavo LAN e la LAN e' presente, il pulsante `Scansiona` puo' fare la scansione completa direttamente: spegne l'hotspot per pochi secondi, cerca le reti, riattiva l'hotspot e aggiorna la lista senza perdere la pagina.
+Se accedi dal PC tramite cavo LAN, lo stesso pulsante puo' spegnere temporaneamente l'hotspot e aggiornare direttamente la lista senza perdere la pagina. Se invece selezioni `wlan1` mentre l'hotspot usa `wlan0`, esegue una normale scansione sulla seconda radio e l'hotspot rimane attivo. Avviso e comportamento cambiano subito quando scegli una radio diversa.
 
 Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` in alto: `1` indica solo la radio della scheda, `2` con nomi come `wlan0, wlan1` indica anche un dongle USB. Nel form `Configura collegamento Wi-Fi` puoi scegliere `Interfaccia radio` per decidere su quale radio attivare la connessione finale.
 
-Se vedi sempre solo `Pi-Setup` e il pulsante `Scansione completa` non compare, verifica che il portale mostri almeno la versione `1.14.0`: questa release usa il nome `VT Network Manager`, distingue Wi-Fi integrata e dongle USB, mostra lo stato termico, aggiunge la guida rapida stampabile e il server locale di stato rete.
+Se la scansione non segue la radio selezionata o compaiono ancora due pulsanti, verifica che il portale mostri almeno la versione `1.14.1`: questa release introduce il pulsante unico adattivo. La versione `1.14.0` ha aggiunto il server locale di stato rete.
 
 ### 4. Provisioning
 
@@ -538,7 +542,7 @@ grep -E 'PORTAL_TITLE|APP_VERSION' /etc/raspberry-wifi-portal/portal.env
 sudo systemctl restart raspberry-wifi-portal.service
 ```
 
-Il portale aggiornato mostra un badge `Versione 1.14.0`, il titolo `VT Network Manager`, il campo `Interfaccia radio`, il riquadro `Temperatura dispositivo` con stato termico, le etichette `wlan0 - Wi-Fi integrata` e, solo se presente, `wlan1 - dongle USB Wi-Fi`, oltre alla sezione `Documenti utente` con guida rapida e scheda accesso. La stessa versione espone il riepilogo rete locale su `127.0.0.1:6001`. Se non trovi queste funzioni, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
+Il portale aggiornato mostra un badge `Versione 1.14.1`, il titolo `VT Network Manager`, il campo `Interfaccia radio`, il riquadro `Temperatura dispositivo` con stato termico, le etichette `wlan0 - Wi-Fi integrata` e, solo se presente, `wlan1 - dongle USB Wi-Fi`, oltre alla sezione `Documenti utente` con guida rapida e scheda accesso. La scansione usa un solo pulsante adattivo e il riepilogo rete locale resta disponibile su `127.0.0.1:6001`. Se non trovi queste funzioni, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
 
 ## Aggiornamento
 

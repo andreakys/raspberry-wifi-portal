@@ -3,11 +3,17 @@ from __future__ import annotations
 import ipaddress
 import time
 from hmac import compare_digest
-from threading import Lock, Thread
+from threading import Lock, RLock, Thread
 
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 
 from config import load_config
+from services.hotspot_recovery import (
+    RecoveryDecision,
+    RecoveryObservation,
+    RecoveryTimings,
+    decide_hotspot_recovery,
+)
 from services.network_manager import (
     CONNECTED_DEVICE_STATES,
     CONNECTING_DEVICE_STATES,
@@ -38,17 +44,36 @@ recovery_state = {
     "reason": None,
     "seconds_without_network": 0,
     "hotspot_reactivation_count": 0,
+    "hotspot_active": False,
+    "next_action": None,
+    "seconds_until_action": None,
     "last_transition_at": None,
     "last_error": None,
 }
 recovery_lock = Lock()
 scan_lock = Lock()
+network_operation_lock = RLock()
 recovery_runtime = {
-    "started_at": time.monotonic(),
     "suspend_until": 0.0,
-    "disconnected_since": None,
-    "last_client_seen_at": None,
+    "manual_hotspot_until": 0.0,
+    "no_access_since": None,
+    "last_client_connection": None,
+    "last_access_kind": None,
+    "wifi_healthy_since": None,
+    "lan_connected_since": None,
+    "hotspot_active_since": None,
+    "last_client_retry_at": None,
 }
+recovery_timings = RecoveryTimings(
+    wifi_client_stable_seconds=config.wifi_client_stable_seconds,
+    lan_stable_seconds=config.lan_stable_seconds,
+    no_access_hotspot_delay_seconds=config.no_access_hotspot_delay_seconds,
+    hotspot_client_retry_interval_seconds=config.hotspot_client_retry_interval_seconds,
+    hotspot_minimum_up_seconds=config.hotspot_minimum_up_seconds,
+    boot_connection_grace_seconds=config.boot_connection_grace_seconds,
+    reconnect_grace_seconds=config.reconnect_grace_seconds,
+    disconnect_hotspot_threshold_seconds=config.disconnect_hotspot_threshold_seconds,
+)
 wifi_scan_state = {
     "state": "idle",
     "message": "Nessuna scansione avviata.",
@@ -133,7 +158,8 @@ def _run_full_wifi_scan_cycle(wifi_interface: str) -> None:
     _pause_hotspot_recovery(config.hotspot_cooldown_seconds, "manual-full-scan")
 
     try:
-        visible_networks = _scan_networks_with_hotspot_paused(wifi_interface)
+        with network_operation_lock:
+            visible_networks = _scan_networks_with_hotspot_paused(wifi_interface)
         _set_scan_state(
             state="completed",
             message=(
@@ -159,27 +185,28 @@ def _run_full_wifi_scan_cycle(wifi_interface: str) -> None:
 
 
 def _scan_networks_with_hotspot_paused(wifi_interface: str | None = None) -> list[dict[str, str]]:
-    hotspot_was_active = network_manager.hotspot_active()
-    try:
-        time.sleep(2)
-        if hotspot_was_active:
-            network_manager.stop_hotspot()
-            time.sleep(3)
-        network_manager.ensure_wifi_enabled()
-        networks = network_manager.list_networks(wifi_interface)
-        visible_networks = [
-            network for network in networks if network.get("ssid") != config.hotspot_ssid
-        ]
-        if hotspot_was_active:
-            network_manager.ensure_hotspot()
-        return visible_networks
-    except NetworkManagerError:
-        if hotspot_was_active:
-            try:
+    with network_operation_lock:
+        hotspot_was_active = network_manager.hotspot_active()
+        try:
+            time.sleep(2)
+            if hotspot_was_active:
+                network_manager.stop_hotspot()
+                time.sleep(3)
+            network_manager.ensure_wifi_enabled()
+            networks = network_manager.list_networks(wifi_interface)
+            visible_networks = [
+                network for network in networks if network.get("ssid") != config.hotspot_ssid
+            ]
+            if hotspot_was_active:
                 network_manager.ensure_hotspot()
-            except NetworkManagerError:
-                pass
-        raise
+            return visible_networks
+        except NetworkManagerError:
+            if hotspot_was_active:
+                try:
+                    network_manager.ensure_hotspot()
+                except NetworkManagerError:
+                    pass
+            raise
 
 
 def _is_authenticated() -> bool:
@@ -209,8 +236,18 @@ def require_portal_login():
 
 def _set_recovery_state(**updates: object) -> None:
     with recovery_lock:
+        transition_changed = (
+            updates.get("state", recovery_state["state"]) != recovery_state["state"]
+            or updates.get("reason", recovery_state["reason"]) != recovery_state["reason"]
+        )
         recovery_state.update(updates)
-        recovery_state["last_transition_at"] = int(time.time())
+        if transition_changed or recovery_state["last_transition_at"] is None:
+            recovery_state["last_transition_at"] = int(time.time())
+
+
+def _recovery_state_snapshot() -> dict[str, object]:
+    with recovery_lock:
+        return dict(recovery_state)
 
 
 def _pause_hotspot_recovery(seconds: int, reason: str) -> None:
@@ -219,6 +256,8 @@ def _pause_hotspot_recovery(seconds: int, reason: str) -> None:
         state="cooldown",
         reason=reason,
         message=f"Recovery hotspot sospeso per {seconds} secondi.",
+        next_action=None,
+        seconds_until_action=seconds,
     )
 
 
@@ -237,13 +276,13 @@ def _bootstrap_network_manager() -> None:
         migrated_connections = network_manager.apply_client_interface_policy()
         if migrated_connections:
             app.logger.info(
-                "Profili Wi-Fi associati automaticamente a wlan1: %s",
+                "Profili Wi-Fi associati automaticamente alla radio client: %s",
                 ", ".join(migrated_connections),
             )
     except NetworkManagerError as error:
         detail = error.stderr or error.stdout or str(error)
         app.logger.warning(
-            "Migrazione automatica dei profili Wi-Fi verso wlan1 non riuscita: %s",
+            "Associazione automatica dei profili Wi-Fi alla radio client non riuscita: %s",
             detail,
         )
 
@@ -275,6 +314,10 @@ def _render_index(
             scan_can_pause_safely=scan_can_pause_safely,
             request_via_hotspot=_request_from_hotspot_network(),
             full_scan=_scan_state_snapshot(),
+            recovery=_recovery_state_snapshot(),
+            manual_hotspot_minutes=max(
+                1, config.manual_hotspot_hold_seconds // 60
+            ),
             access_sheet=_access_sheet(status),
             error_message=error_message,
             network_message=network_message,
@@ -285,13 +328,20 @@ def _render_index(
 
 
 def _apply_configuration(payload: dict[str, str]) -> None:
-    result = network_manager.configure_wifi(payload)
+    with network_operation_lock:
+        result = network_manager.configure_wifi(payload)
     provisioning_state["state"] = "success" if result.success else "error"
     provisioning_state["message"] = result.message
     provisioning_state["connection_name"] = result.connection_name
     provisioning_state["connectivity"] = result.connectivity
     provisioning_state["interface"] = result.interface
-    _pause_hotspot_recovery(config.hotspot_cooldown_seconds, "post-provisioning")
+    if result.success:
+        recovery_runtime["suspend_until"] = time.monotonic()
+    else:
+        _pause_hotspot_recovery(
+            config.hotspot_cooldown_seconds,
+            "post-provisioning-error",
+        )
 
 
 def _wifi_client_is_healthy(status: dict[str, object]) -> bool:
@@ -305,24 +355,261 @@ def _network_is_recovering(status: dict[str, object]) -> bool:
     return device_state in CONNECTING_DEVICE_STATES
 
 
+def _elapsed_seconds(started_at: object, now: float) -> int:
+    if not isinstance(started_at, (int, float)):
+        return 0
+    return max(0, int(now - float(started_at)))
+
+
+def _update_recovery_runtime(status: dict[str, object], now: float) -> None:
+    wifi_client_healthy = _wifi_client_is_healthy(status)
+    lan_connected = bool(status.get("lan_connected"))
+    hotspot_active = bool(status.get("hotspot_active"))
+
+    if wifi_client_healthy:
+        if recovery_runtime["wifi_healthy_since"] is None:
+            recovery_runtime["wifi_healthy_since"] = now
+        recovery_runtime["last_client_connection"] = status.get(
+            "active_client_connection"
+        )
+        recovery_runtime["last_access_kind"] = "wifi"
+    else:
+        recovery_runtime["wifi_healthy_since"] = None
+
+    if lan_connected:
+        if recovery_runtime["lan_connected_since"] is None:
+            recovery_runtime["lan_connected_since"] = now
+        if not wifi_client_healthy:
+            recovery_runtime["last_access_kind"] = "lan"
+    else:
+        recovery_runtime["lan_connected_since"] = None
+
+    if wifi_client_healthy or lan_connected:
+        recovery_runtime["no_access_since"] = None
+    elif recovery_runtime["no_access_since"] is None:
+        recovery_runtime["no_access_since"] = now
+
+    if hotspot_active:
+        if recovery_runtime["hotspot_active_since"] is None:
+            recovery_runtime["hotspot_active_since"] = now
+    else:
+        recovery_runtime["hotspot_active_since"] = None
+
+
+def _protected_recovery_reason(now: float) -> str | None:
+    if provisioning_state["state"] == "running":
+        return "provisioning"
+    if _scan_state_snapshot().get("state") == "running":
+        return "wifi-scan"
+    if now < float(recovery_runtime["suspend_until"]):
+        return "cooldown"
+    return None
+
+
+def _recovery_observation(
+    status: dict[str, object],
+    now: float,
+) -> RecoveryObservation:
+    last_retry_at = recovery_runtime["last_client_retry_at"]
+    return RecoveryObservation(
+        hotspot_active=bool(status.get("hotspot_active")),
+        wifi_client_healthy=_wifi_client_is_healthy(status),
+        lan_connected=bool(status.get("lan_connected")),
+        has_separate_wifi_interfaces=bool(
+            status.get("has_separate_wifi_interfaces")
+        ),
+        managed_wifi_client_configured=bool(
+            status.get("managed_wifi_client_configured")
+        ),
+        network_recovering=_network_is_recovering(status),
+        hotspot_active_for=_elapsed_seconds(
+            recovery_runtime["hotspot_active_since"], now
+        ),
+        wifi_client_stable_for=_elapsed_seconds(
+            recovery_runtime["wifi_healthy_since"], now
+        ),
+        lan_stable_for=_elapsed_seconds(
+            recovery_runtime["lan_connected_since"], now
+        ),
+        no_access_for=_elapsed_seconds(
+            recovery_runtime["no_access_since"], now
+        ),
+        seconds_since_client_retry=(
+            _elapsed_seconds(last_retry_at, now)
+            if isinstance(last_retry_at, (int, float))
+            else None
+        ),
+        last_access_kind=(
+            str(recovery_runtime["last_access_kind"])
+            if recovery_runtime["last_access_kind"]
+            else None
+        ),
+        manual_hold_remaining=max(
+            0,
+            int(float(recovery_runtime["manual_hotspot_until"]) - now),
+        ),
+        protected_reason=_protected_recovery_reason(now),
+    )
+
+
+def _pending_action(decision: RecoveryDecision) -> str | None:
+    if decision.state in {"wifi-stabilizing", "lan-stabilizing"}:
+        return "stop-hotspot"
+    if decision.state == "waiting-hotspot":
+        return "start-hotspot"
+    if decision.reason == "single-radio-retry-wait":
+        return "retry-client"
+    return None
+
+
+def _publish_recovery_decision(
+    decision: RecoveryDecision,
+    observation: RecoveryObservation,
+) -> None:
+    state = decision.state
+    _set_recovery_state(
+        state=state,
+        reason=decision.reason,
+        message=decision.message,
+        seconds_without_network=observation.no_access_for,
+        hotspot_active=observation.hotspot_active,
+        next_action=(
+            decision.action
+            if decision.action != "none"
+            else _pending_action(decision)
+        ),
+        seconds_until_action=decision.seconds_until_action,
+        last_error=None,
+    )
+
+
+def _start_hotspot_automatically(now: float) -> None:
+    with network_operation_lock:
+        network_manager.ensure_hotspot()
+    recovery_runtime["hotspot_active_since"] = now
+    recovery_runtime["manual_hotspot_until"] = 0.0
+    _set_recovery_state(
+        state="hotspot-reactivated",
+        reason="no-alternate-access",
+        message="Pi-Setup attivato automaticamente: nessun accesso alternativo disponibile.",
+        seconds_without_network=0,
+        hotspot_active=True,
+        next_action=None,
+        seconds_until_action=None,
+        hotspot_reactivation_count=int(
+            recovery_state["hotspot_reactivation_count"]
+        )
+        + 1,
+        last_error=None,
+    )
+
+
+def _stop_hotspot_for_stable_access(
+    status: dict[str, object],
+    reason: str,
+) -> None:
+    reconnected_profile: str | None = None
+    with network_operation_lock:
+        network_manager.stop_hotspot()
+        if (
+            not _wifi_client_is_healthy(status)
+            and bool(status.get("managed_wifi_client_configured"))
+        ):
+            reconnected_profile = network_manager.reconnect_managed_wifi(
+                str(status.get("client_wifi_interface") or config.client_wifi_interface),
+                preferred_connection=(
+                    str(recovery_runtime["last_client_connection"])
+                    if recovery_runtime["last_client_connection"]
+                    else None
+                ),
+            )
+
+    recovery_runtime["hotspot_active_since"] = None
+    recovery_runtime["manual_hotspot_until"] = 0.0
+    message = "Pi-Setup spento automaticamente: collegamento alternativo stabile."
+    if reconnected_profile:
+        message += f" Riconnesso il profilo {reconnected_profile}."
+    _set_recovery_state(
+        state="hotspot-stopped",
+        reason=reason,
+        message=message,
+        hotspot_active=False,
+        next_action=None,
+        seconds_until_action=None,
+        last_error=None,
+    )
+
+
+def _retry_single_radio_client(status: dict[str, object], now: float) -> None:
+    recovery_runtime["last_client_retry_at"] = now
+    _set_recovery_state(
+        state="retrying-client",
+        reason="single-radio-client-retry",
+        message="Pi-Setup sospeso brevemente: tentativo di connessione Wi-Fi salvata.",
+        hotspot_active=False,
+        next_action=None,
+        seconds_until_action=None,
+        last_error=None,
+    )
+
+    connection_name: str | None = None
+    retry_error: NetworkManagerError | None = None
+    with network_operation_lock:
+        try:
+            network_manager.stop_hotspot()
+            recovery_runtime["hotspot_active_since"] = None
+            connection_name = network_manager.reconnect_managed_wifi(
+                str(status.get("client_wifi_interface") or config.client_wifi_interface),
+                preferred_connection=(
+                    str(recovery_runtime["last_client_connection"])
+                    if recovery_runtime["last_client_connection"]
+                    else None
+                ),
+            )
+        except NetworkManagerError as error:
+            retry_error = error
+
+        if connection_name is None:
+            network_manager.ensure_hotspot()
+
+    if connection_name:
+        recovered_at = time.monotonic()
+        recovery_runtime["wifi_healthy_since"] = recovered_at
+        recovery_runtime["last_client_connection"] = connection_name
+        recovery_runtime["last_access_kind"] = "wifi"
+        recovery_runtime["no_access_since"] = None
+        _set_recovery_state(
+            state="client-recovered",
+            reason="single-radio-client-recovered",
+            message=f"Connessione Wi-Fi ripristinata con il profilo {connection_name}.",
+            hotspot_active=False,
+            next_action=None,
+            seconds_until_action=None,
+            last_error=None,
+        )
+        return
+
+    recovery_runtime["hotspot_active_since"] = time.monotonic()
+    detail = ""
+    if retry_error:
+        detail = retry_error.stderr or retry_error.stdout or str(retry_error)
+    _set_recovery_state(
+        state="hotspot-restored",
+        reason="single-radio-client-retry-failed",
+        message="Rete salvata non disponibile: Pi-Setup e' stato riattivato.",
+        hotspot_active=True,
+        next_action="retry-client",
+        seconds_until_action=config.hotspot_client_retry_interval_seconds,
+        last_error=detail or None,
+    )
+
+
 def _run_recovery_monitor() -> None:
     while True:
         now = time.monotonic()
 
-        if provisioning_state["state"] == "running":
-            recovery_runtime["disconnected_since"] = None
-            _set_recovery_state(
-                state="paused",
-                reason="provisioning",
-                message="Configurazione Wi-Fi in corso, recovery hotspot in pausa.",
-                seconds_without_network=0,
-            )
-            time.sleep(config.recovery_check_interval_seconds)
-            continue
-
         try:
             status = network_manager.current_status()
-            recovery_state["last_error"] = None
         except NetworkManagerError as error:
             detail = error.stderr or error.stdout or str(error)
             _set_recovery_state(
@@ -334,111 +621,35 @@ def _run_recovery_monitor() -> None:
             time.sleep(config.recovery_check_interval_seconds)
             continue
 
-        if status["hotspot_active"]:
-            recovery_runtime["disconnected_since"] = None
-            _set_recovery_state(
-                state="hotspot-active",
-                reason="hotspot-active",
-                message="Hotspot temporaneo attivo.",
-                seconds_without_network=0,
-            )
-            time.sleep(config.recovery_check_interval_seconds)
-            continue
+        _update_recovery_runtime(status, now)
+        observation = _recovery_observation(status, now)
+        decision = decide_hotspot_recovery(observation, recovery_timings)
+        _publish_recovery_decision(decision, observation)
 
-        if _wifi_client_is_healthy(status):
-            recovery_runtime["last_client_seen_at"] = now
-            recovery_runtime["disconnected_since"] = None
+        try:
+            if decision.action == "start-hotspot":
+                _start_hotspot_automatically(now)
+            elif decision.action == "stop-hotspot":
+                _stop_hotspot_for_stable_access(status, decision.reason)
+            elif decision.action == "retry-client":
+                _retry_single_radio_client(status, now)
+        except NetworkManagerError as error:
+            detail = error.stderr or error.stdout or str(error)
+            if decision.action == "retry-client":
+                try:
+                    network_manager.ensure_hotspot()
+                    recovery_runtime["hotspot_active_since"] = time.monotonic()
+                except NetworkManagerError:
+                    pass
             _set_recovery_state(
-                state="monitoring",
-                reason="wifi-client-ok",
-                message="Wi-Fi client disponibile, hotspot temporaneo non necessario.",
-                seconds_without_network=0,
+                state="warning",
+                reason=f"{decision.action}-failed",
+                message="Operazione automatica hotspot non riuscita; nuovo tentativo al prossimo ciclo.",
+                last_error=detail,
+                seconds_without_network=observation.no_access_for,
+                next_action=decision.action,
+                seconds_until_action=config.recovery_check_interval_seconds,
             )
-            time.sleep(config.recovery_check_interval_seconds)
-            continue
-
-        if recovery_runtime["disconnected_since"] is None:
-            recovery_runtime["disconnected_since"] = now
-
-        disconnected_for = int(now - float(recovery_runtime["disconnected_since"]))
-        since_boot = int(now - float(recovery_runtime["started_at"]))
-        suspend_until = float(recovery_runtime["suspend_until"])
-        active_client_connection = status.get("active_client_connection")
-        lan_connected = bool(status.get("lan_connected"))
-
-        if now < suspend_until:
-            _set_recovery_state(
-                state="cooldown",
-                reason="cooldown",
-                message="Recovery hotspot in attesa per evitare falsi positivi su disconnessioni temporanee.",
-                seconds_without_network=disconnected_for,
-            )
-            time.sleep(config.recovery_check_interval_seconds)
-            continue
-
-        if _network_is_recovering(status):
-            threshold = max(config.reconnect_grace_seconds, config.disconnect_hotspot_threshold_seconds)
-            _set_recovery_state(
-                state="reconnecting",
-                reason="reconnecting",
-                message="La Wi-Fi client sta tentando il recupero della rete configurata.",
-                seconds_without_network=disconnected_for,
-            )
-        elif recovery_runtime["last_client_seen_at"] is None and not active_client_connection:
-            threshold = config.boot_connection_grace_seconds
-            message = "Attendo il tempo di grace al boot prima di riaprire l'hotspot per configurare la Wi-Fi."
-            if lan_connected:
-                message = (
-                    "LAN cablata presente, ma Wi-Fi client non connessa: "
-                    "attendo il grace al boot prima di aprire l'hotspot di setup."
-                )
-            _set_recovery_state(
-                state="boot-wait",
-                reason="boot-grace",
-                message=message,
-                seconds_without_network=since_boot,
-            )
-        else:
-            threshold = config.disconnect_hotspot_threshold_seconds
-            message = "Wi-Fi client assente, ma ancora entro la soglia di tolleranza."
-            if lan_connected:
-                message = (
-                    "LAN cablata presente, ma Wi-Fi client assente: "
-                    "attendo la soglia prima di riaprire l'hotspot."
-                )
-            _set_recovery_state(
-                state="waiting-loss-threshold",
-                reason="wifi-client-loss",
-                message=message,
-                seconds_without_network=disconnected_for,
-            )
-
-        if disconnected_for >= threshold or since_boot >= threshold and threshold == config.boot_connection_grace_seconds:
-            try:
-                network_manager.ensure_hotspot()
-                recovery_runtime["disconnected_since"] = None
-                recovery_runtime["suspend_until"] = now + config.hotspot_cooldown_seconds
-                reactivation_reason = (
-                    "wifi-client-not-configured"
-                    if recovery_runtime["last_client_seen_at"] is None
-                    else "wifi-client-loss"
-                )
-                _set_recovery_state(
-                    state="hotspot-reactivated",
-                    reason=reactivation_reason,
-                    message="Hotspot temporaneo riattivato automaticamente per configurare o recuperare la Wi-Fi client.",
-                    seconds_without_network=0,
-                    hotspot_reactivation_count=int(recovery_state["hotspot_reactivation_count"]) + 1,
-                )
-            except NetworkManagerError as error:
-                detail = error.stderr or error.stdout or str(error)
-                _set_recovery_state(
-                    state="warning",
-                    reason="hotspot-start-failed",
-                    message="Tentativo di riattivazione hotspot fallito; nuovo tentativo al prossimo ciclo.",
-                    last_error=detail,
-                    seconds_without_network=disconnected_for,
-                )
 
         time.sleep(config.recovery_check_interval_seconds)
 
@@ -553,6 +764,7 @@ def quick_guide():
         page_title=config.portal_title,
         app_version=config.app_version,
         status=status,
+        recovery=_recovery_state_snapshot(),
         access_sheet=_access_sheet(status),
     )
 
@@ -567,7 +779,7 @@ def api_status():
                 "version": config.app_version,
             },
             "provisioning": provisioning_state,
-            "recovery": recovery_state,
+            "recovery": _recovery_state_snapshot(),
             "full_scan": _scan_state_snapshot(),
         }
     )
@@ -686,7 +898,17 @@ def configure():
         return _render_index(error_message=validation_error, status_code=400)
 
     provisioning_state["state"] = "running"
-    provisioning_state["message"] = "Il dispositivo sta disattivando l'hotspot temporaneo e sta provando la nuova rete."
+    target_interface = payload.get("wifi_interface", "")
+    if target_interface == config.hotspot_interface:
+        provisioning_state["message"] = (
+            "Il dispositivo sta disattivando l'hotspot temporaneo "
+            "e sta provando la nuova rete."
+        )
+    else:
+        provisioning_state["message"] = (
+            "Il dispositivo sta provando la nuova rete sulla radio client; "
+            "Pi-Setup restera' attivo fino alla verifica della connessione."
+        )
     provisioning_state["connection_name"] = None
     provisioning_state["connectivity"] = None
     provisioning_state["interface"] = payload.get("wifi_interface")
@@ -715,14 +937,77 @@ def api_provisioning():
 
 @app.get("/api/recovery")
 def api_recovery():
-    return jsonify(recovery_state)
+    return jsonify(_recovery_state_snapshot())
 
 
 @app.post("/hotspot/restart")
 def restart_hotspot():
-    network_manager.ensure_hotspot()
-    _pause_hotspot_recovery(config.hotspot_cooldown_seconds, "manual-hotspot")
-    return jsonify({"ok": True, "status": network_manager.current_status()})
+    now = time.monotonic()
+    try:
+        with network_operation_lock:
+            network_manager.ensure_hotspot()
+    except NetworkManagerError as error:
+        detail = error.stderr or error.stdout or str(error)
+        if request.is_json:
+            return jsonify({"ok": False, "message": detail}), 500
+        return _render_index(network_error=detail, status_code=500)
+
+    recovery_runtime["hotspot_active_since"] = now
+    recovery_runtime["manual_hotspot_until"] = (
+        now + config.manual_hotspot_hold_seconds
+    )
+    _set_recovery_state(
+        state="manual-hotspot",
+        reason="manual-hold",
+        message="Pi-Setup attivato manualmente.",
+        hotspot_active=True,
+        next_action="automatic-management",
+        seconds_until_action=config.manual_hotspot_hold_seconds,
+        last_error=None,
+    )
+    if request.is_json:
+        return jsonify({"ok": True, "status": network_manager.current_status()})
+    return _render_index(
+        network_message=(
+            "Pi-Setup attivato manualmente per "
+            f"{config.manual_hotspot_hold_seconds // 60} minuti."
+        )
+    )
+
+
+@app.post("/hotspot/stop")
+def stop_hotspot():
+    status = network_manager.current_status()
+    alternate_access = bool(status.get("lan_connected")) or (
+        _wifi_client_is_healthy(status)
+        and status.get("active_client_interface")
+        != status.get("hotspot_interface")
+    )
+    if not alternate_access:
+        message = (
+            "Pi-Setup non puo' essere spento manualmente: "
+            "non e' disponibile un collegamento LAN o Wi-Fi alternativo."
+        )
+        if request.is_json:
+            return jsonify({"ok": False, "message": message}), 409
+        return _render_index(network_error=message, status_code=409)
+
+    with network_operation_lock:
+        network_manager.stop_hotspot()
+    recovery_runtime["hotspot_active_since"] = None
+    recovery_runtime["manual_hotspot_until"] = 0.0
+    _set_recovery_state(
+        state="hotspot-stopped",
+        reason="manual-stop",
+        message="Pi-Setup spento manualmente; collegamento alternativo disponibile.",
+        hotspot_active=False,
+        next_action=None,
+        seconds_until_action=None,
+        last_error=None,
+    )
+    if request.is_json:
+        return jsonify({"ok": True, "status": network_manager.current_status()})
+    return _render_index(network_message="Pi-Setup spento manualmente.")
 
 
 @app.post("/network/ipv4")

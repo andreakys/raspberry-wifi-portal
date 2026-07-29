@@ -245,6 +245,7 @@ class NetworkManagerService:
             ),
             {},
         )
+        managed_connections = self.list_managed_connections()
         return {
             "wifi_interface": self.config.wifi_interface,
             "hotspot_interface": self.config.hotspot_interface,
@@ -279,13 +280,17 @@ class NetworkManagerService:
             ),
             "hotspot_interface_label": self.interface_display_name(self.config.hotspot_interface),
             "wifi_client_configured": self.wifi_client_configured(),
+            "managed_wifi_client_configured": any(
+                self._is_wifi_connection_type(str(item.get("type", "")))
+                for item in managed_connections
+            ),
             "hotspot_active": self.hotspot_active(),
             "hotspot_ssid": self.config.hotspot_ssid,
             "portal_address": self.config.hotspot_address.split("/", 1)[0],
             "lan_connected": self._lan_connected(interfaces),
             "lan_interfaces": self._lan_interfaces(interfaces),
             "interfaces": interfaces,
-            "managed_connections": self.list_managed_connections(),
+            "managed_connections": managed_connections,
         }
 
     def wifi_client_configured(self) -> bool:
@@ -300,7 +305,7 @@ class NetworkManagerService:
 
     def apply_client_interface_policy(self) -> list[str]:
         wifi_device_names = self._wifi_device_names()
-        if not {"wlan0", "wlan1"}.issubset(wifi_device_names):
+        if not wifi_device_names:
             return []
 
         preferred_interface = self.preferred_client_wifi_interface(
@@ -312,14 +317,16 @@ class NetworkManagerService:
                 continue
 
             connection_name = str(connection["name"])
-            self._run_nmcli(
-                "connection",
-                "modify",
-                connection_name,
-                "connection.interface-name",
-                preferred_interface,
-            )
-            migrated_connections.append(connection_name)
+            current_interface = self._connection_interface_name(connection_name)
+            if current_interface != preferred_interface:
+                self._run_nmcli(
+                    "connection",
+                    "modify",
+                    connection_name,
+                    "connection.interface-name",
+                    preferred_interface,
+                )
+                migrated_connections.append(connection_name)
 
             active_device = str(connection.get("device", ""))
             if active_device and active_device != preferred_interface:
@@ -337,6 +344,94 @@ class NetworkManagerService:
                 )
 
         return migrated_connections
+
+    def reconnect_managed_wifi(
+        self,
+        interface: str,
+        preferred_connection: str | None = None,
+    ) -> str | None:
+        candidates = [
+            item
+            for item in self.list_managed_connections()
+            if self._is_wifi_connection_type(str(item.get("type", "")))
+        ]
+        visible_signals: dict[str, int] = {}
+        try:
+            for network in self.list_networks(interface):
+                ssid = str(network.get("ssid", ""))
+                signal = self._network_signal_value(network)
+                if ssid:
+                    visible_signals[ssid] = max(
+                        visible_signals.get(ssid, 0),
+                        signal,
+                    )
+        except (NetworkManagerError, subprocess.TimeoutExpired):
+            pass
+
+        for candidate in candidates:
+            candidate["ssid"] = self._connection_wifi_ssid(
+                str(candidate["name"])
+            )
+
+        visible_candidates = [
+            item
+            for item in candidates
+            if str(item.get("ssid", "")) in visible_signals
+        ]
+        if visible_candidates:
+            candidates = visible_candidates
+        candidates.sort(
+            key=lambda item: (
+                str(item.get("name", "")) != (preferred_connection or ""),
+                -visible_signals.get(str(item.get("ssid", "")), 0),
+                str(item.get("name", "")).lower(),
+            )
+        )
+
+        candidates = candidates[:2]
+        attempt_timeout = max(
+            10,
+            self.config.connection_wait_seconds // max(1, len(candidates)),
+        )
+        for connection in candidates:
+            connection_name = str(connection["name"])
+            self._run_nmcli(
+                "connection",
+                "modify",
+                connection_name,
+                "connection.interface-name",
+                interface,
+                check=False,
+            )
+            try:
+                result = self._run_nmcli(
+                    "connection",
+                    "up",
+                    connection_name,
+                    "ifname",
+                    interface,
+                    check=False,
+                    timeout=attempt_timeout,
+                )
+            except subprocess.TimeoutExpired:
+                continue
+            if result.returncode == 0:
+                return connection_name
+
+        return None
+
+    def _connection_interface_name(self, connection_name: str) -> str:
+        result = self._run_nmcli(
+            "-g",
+            "connection.interface-name",
+            "connection",
+            "show",
+            connection_name,
+            check=False,
+        )
+        if result.returncode != 0:
+            return ""
+        return result.stdout.strip()
 
     def list_managed_connections(self) -> list[dict[str, Any]]:
         result = self._run_nmcli(
@@ -781,7 +876,6 @@ class NetworkManagerService:
 
             connectivity = self.connectivity()
             if connectivity in {"connected", "connected (site only)", "full", "limited", "portal"}:
-                self.stop_hotspot()
                 return ConfigureResult(
                     success=True,
                     message="Connessione Wi-Fi configurata correttamente.",
@@ -790,7 +884,6 @@ class NetworkManagerService:
                     interface=target_interface,
                 )
 
-            self.stop_hotspot()
             return ConfigureResult(
                 success=True,
                 message="Connessione attivata, ma la connettivita' Internet e' limitata o richiede un portale.",

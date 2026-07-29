@@ -172,6 +172,42 @@ h3 {
   overflow-wrap: anywhere;
 }
 
+.hotspot-management {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.hotspot-management strong,
+.hotspot-management small {
+  display: block;
+}
+
+.hotspot-management strong {
+  margin-top: 5px;
+  line-height: 1.4;
+}
+
+.hotspot-management small {
+  margin-top: 5px;
+  color: var(--muted);
+}
+
+.hotspot-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.hotspot-actions form {
+  margin: 0;
+}
+
 .temperature-card.temperature-watch {
   border-color: rgba(202, 138, 4, 0.38);
   background: rgba(254, 249, 195, 0.72);
@@ -679,6 +715,19 @@ select:focus {
   }
 
   .document-actions .secondary-button {
+    width: 100%;
+  }
+
+  .hotspot-management {
+    grid-template-columns: 1fr;
+  }
+
+  .hotspot-actions {
+    justify-content: stretch;
+  }
+
+  .hotspot-actions form,
+  .hotspot-actions .utility-button {
     width: 100%;
   }
 }

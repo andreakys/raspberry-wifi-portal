@@ -27,8 +27,8 @@ TMP_DIR = ROOT / "tmp" / "pdfs"
 OUTPUT_PDF = OUTPUT_DIR / "manuale-utente-raspberry-wifi-portal.pdf"
 DOCS_PDF = ROOT / "docs" / "manuale-utente-raspberry-wifi-portal.pdf"
 CODE_WRAP_WIDTH = 88
-DOCUMENT_VERSION = "1.15.0"
-DOCUMENT_DATE = "15 luglio 2026"
+DOCUMENT_VERSION = "1.16.0"
+DOCUMENT_DATE = "29 luglio 2026"
 
 
 def build_styles():
@@ -239,14 +239,14 @@ def provisioning_diagram() -> Drawing:
 
 def recovery_diagram() -> Drawing:
     return workflow_diagram(
-        "Recovery hotspot - Wi-Fi client separata dalla LAN",
+        "Pi-Setup automatico - accesso disponibile e recovery",
         [
-            ("Boot", "attesa iniziale", "#ffffff"),
-            ("Controllo", "Wi-Fi client", "#e8f1fb"),
-            ("Soglia", "Wi-Fi assente", "#fff7ed"),
-            ("Hotspot", "Pi-Setup", "#eaf7ef"),
+            ("Controllo", "Wi-Fi e LAN", "#ffffff"),
+            ("Stabilita'", "30 s / 120 s", "#e8f1fb"),
+            ("Accesso ok", "spegni hotspot", "#eaf7ef"),
+            ("Nessun accesso", "attiva Pi-Setup", "#fff7ed"),
         ],
-        "La LAN cablata resta informativa: non blocca il recovery della Wi-Fi client.",
+        "Con la sola wlan0, le reti salvate vengono riprovate ogni 5 minuti.",
     )
 
 

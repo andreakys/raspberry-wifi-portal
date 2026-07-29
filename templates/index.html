@@ -29,8 +29,9 @@
         </p>
         <div class="status-grid">
           <article>
-            <span class="label">Hotspot</span>
-            <strong>{{ status.hotspot_interface_label }}</strong>
+            <span class="label">Pi-Setup</span>
+            <strong id="hotspot-status">{{ "Attivo" if status.hotspot_active else "Spento" }}</strong>
+            <small>{{ status.hotspot_interface_label }}</small>
           </article>
           <article>
             <span class="label">Radio Wi-Fi client</span>
@@ -74,6 +75,37 @@
             <span class="label">Versione</span>
             <strong>{{ app_version }}</strong>
           </article>
+        </div>
+        <div class="hotspot-management">
+          <div>
+            <span class="label">Gestione automatica hotspot</span>
+            <strong id="recovery-message">{{ recovery.message }}</strong>
+            <small id="recovery-countdown" {% if recovery.seconds_until_action is none %}class="hidden"{% endif %}>
+              {% if recovery.seconds_until_action is not none %}
+              Prossima verifica o azione tra circa {{ recovery.seconds_until_action }} secondi.
+              {% endif %}
+            </small>
+          </div>
+          <div class="hotspot-actions">
+            <form
+              method="post"
+              action="/hotspot/restart"
+              onsubmit="return confirm('Attivare Pi-Setup per {{ manual_hotspot_minutes }} minuti? La radio integrata potrebbe lasciare temporaneamente la rete client.');"
+            >
+              <button type="submit" class="utility-button">
+                {% if status.hotspot_active %}Mantieni{% else %}Attiva{% endif %} {{ manual_hotspot_minutes }} min
+              </button>
+            </form>
+            {% if status.hotspot_active and (status.lan_connected or (status.active_client_interface and status.active_client_interface != status.hotspot_interface and status.device_state in ["connected", "activated"])) %}
+            <form
+              method="post"
+              action="/hotspot/stop"
+              onsubmit="return confirm('Spegnere Pi-Setup? Il portale restera raggiungibile dal collegamento alternativo.');"
+            >
+              <button type="submit" class="utility-button danger-button">Spegni</button>
+            </form>
+            {% endif %}
+          </div>
         </div>
       </section>
 
@@ -406,6 +438,9 @@
       const scanStatus = document.getElementById("scan-status");
       const networkCount = document.getElementById("network-count");
       const networkList = document.getElementById("network-list");
+      const hotspotStatus = document.getElementById("hotspot-status");
+      const recoveryMessage = document.getElementById("recovery-message");
+      const recoveryCountdown = document.getElementById("recovery-countdown");
       const scanContext = {
         hotspotActive: {{ status.hotspot_active|tojson }},
         hotspotInterface: {{ status.hotspot_interface|tojson }},
@@ -426,6 +461,29 @@
       }
 
       bindPasswordToggles();
+
+      async function refreshRecoveryStatus() {
+        try {
+          const response = await fetch("/api/recovery", { cache: "no-store" });
+          if (!response.ok) {
+            return;
+          }
+          const recovery = await response.json();
+          hotspotStatus.textContent = recovery.hotspot_active ? "Attivo" : "Spento";
+          recoveryMessage.textContent = recovery.message || "Gestione automatica hotspot attiva.";
+          if (Number.isInteger(recovery.seconds_until_action)) {
+            recoveryCountdown.textContent = `Prossima verifica o azione tra circa ${recovery.seconds_until_action} secondi.`;
+            recoveryCountdown.classList.remove("hidden");
+          } else {
+            recoveryCountdown.textContent = "";
+            recoveryCountdown.classList.add("hidden");
+          }
+        } catch (_error) {
+          // Lo stato statico resta visibile se il controllo periodico non risponde.
+        }
+      }
+
+      window.setInterval(refreshRecoveryStatus, 5000);
 
       function syncVisibility() {
         const mode = securityMode.value;

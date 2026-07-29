@@ -68,6 +68,8 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 - visualizzazione degli indirizzi IPv4 correnti di Wi-Fi e LAN
 - configurazione IPv4 DHCP/statico per interfacce non usate dall'hotspot attivo
 - recovery automatico dell'hotspot dopo boot fallito o perdita prolungata rete
+- spegnimento automatico di `Pi-Setup` dopo Wi-Fi client o LAN stabili
+- tentativi periodici delle reti salvate quando hotspot e client condividono `wlan0`
 - installazione da archivio o da repository GitHub
 - profili pronti per reti stabili o instabili
 - server TCP locale di sola lettura con riepilogo rete ogni 30 secondi
@@ -81,7 +83,7 @@ Quando il Raspberry Pi non ha ancora una connessione valida:
 3. riceve i parametri della rete aziendale
 4. salva la configurazione tramite `NetworkManager`
 5. tenta la connessione alla rete aziendale
-6. spegne l'hotspot se la connessione riesce
+6. spegne l'hotspot quando la nuova connessione o la LAN risultano stabili
 
 ## Struttura file
 
@@ -249,16 +251,17 @@ Se accedi dal PC tramite cavo LAN, lo stesso pulsante puo' spegnere temporaneame
 
 Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` in alto: `1` indica solo la radio della scheda, `2` con nomi come `wlan0, wlan1` indica anche un dongle USB. Quando entrambe sono presenti, il portale seleziona automaticamente `wlan1` per scansione e connessione finale e riserva `wlan0` all'hotspot.
 
-Se con entrambe le radio il form permette ancora di usare `wlan0` per il client, verifica che il portale mostri almeno la versione `1.15.0`. La versione `1.14.1` ha introdotto il pulsante unico adattivo e la versione `1.14.0` il server locale di stato rete.
+Se con entrambe le radio il form permette ancora di usare `wlan0` per il client, verifica che il portale mostri almeno la versione `1.15.0`. La versione `1.16.0` aggiunge la gestione automatica di accensione e spegnimento di `Pi-Setup`.
 
 ### 4. Provisioning
 
-Il backend crea una nuova connessione `NetworkManager`, restituisce subito una pagina di attesa e poi prova ad attivare la nuova rete in background. Questo evita che lo smartphone perda il feedback visivo nel momento in cui il Raspberry disattiva l'hotspot.
+Il backend crea una nuova connessione `NetworkManager`, restituisce subito una pagina di attesa e poi prova ad attivare la nuova rete in background. Con la sola wlan0 il telefono perde temporaneamente il portale; con il dongle, Pi-Setup resta attivo fino alla verifica di stabilita' della connessione su wlan1.
 
 ### 5. Esito
 
-- Se la connessione riesce, il Raspberry disattiva l'hotspot.
-- Se fallisce, l'hotspot resta disponibile e l'utente puo' ritentare.
+- Con la sola wlan0, l'hotspot viene spento prima del tentativo e resta spento se la connessione riesce.
+- Con wlan0 e wlan1, l'hotspot resta disponibile durante il tentativo e viene spento dopo 30 secondi di connessione client stabile.
+- Se il tentativo fallisce, l'hotspot resta disponibile e l'utente puo' ritentare.
 
 ## Variabili d'ambiente
 
@@ -284,6 +287,12 @@ Il backend crea una nuova connessione `NetworkManager`, restituisce subito una p
 | `RECONNECT_GRACE_SECONDS` | `45` | Tempo minimo concesso a NetworkManager per i tentativi di riconnessione |
 | `DISCONNECT_HOTSPOT_THRESHOLD_SECONDS` | `180` | Soglia di perdita prolungata della rete prima di riattivare l'hotspot |
 | `HOTSPOT_COOLDOWN_SECONDS` | `90` | Pausa dopo provisioning o riattivazione hotspot per evitare rimbalzi |
+| `WIFI_CLIENT_STABLE_SECONDS` | `30` | Stabilita' Wi-Fi client richiesta prima di spegnere `Pi-Setup` |
+| `LAN_STABLE_SECONDS` | `120` | Stabilita' LAN richiesta prima di spegnere `Pi-Setup` |
+| `NO_ACCESS_HOTSPOT_DELAY_SECONDS` | `20` | Attesa prima di riaprire l'hotspot dopo la perdita della sola LAN |
+| `HOTSPOT_CLIENT_RETRY_INTERVAL_SECONDS` | `300` | Intervallo dei tentativi Wi-Fi con la sola `wlan0` |
+| `HOTSPOT_MINIMUM_UP_SECONDS` | `30` | Tempo minimo di permanenza dell'hotspot dopo l'attivazione |
+| `MANUAL_HOTSPOT_HOLD_SECONDS` | `600` | Durata del mantenimento manuale di `Pi-Setup` |
 | `NETWORK_STATUS_TCP_ENABLED` | `true` | Abilita il server TCP locale di stato rete |
 | `NETWORK_STATUS_TCP_PORT` | `6001` | Porta TCP in ascolto solo su `127.0.0.1` |
 | `NETWORK_STATUS_TCP_INTERVAL_SECONDS` | `30` | Intervallo tra due messaggi per i client collegati |
@@ -343,7 +352,7 @@ HOTSPOT_INTERFACE=wlan0
 CLIENT_WIFI_INTERFACE=wlan0
 ```
 
-In questo caso `wlan0` viene usata prima come hotspot temporaneo e poi come client verso la rete finale. Durante il tentativo di connessione il telefono perde temporaneamente `Pi-Setup`; se la configurazione fallisce, il recovery puo' riaprire l'hotspot.
+In questo caso `wlan0` viene usata prima come hotspot temporaneo e poi come client verso la rete finale. Durante il tentativo di connessione il telefono perde temporaneamente `Pi-Setup`. Se esiste una rete salvata, il recovery sospende l'hotspot ogni 5 minuti per un tentativo controllato; se la rete non e' disponibile, `Pi-Setup` viene riaperto immediatamente.
 
 Scenario con Wi-Fi integrata e dongle USB:
 
@@ -358,9 +367,9 @@ Con questa configurazione:
 - `wlan1` scansiona le reti e prova la connessione alla rete finale
 - `wlan0` non puo' essere selezionata come radio client finche' entrambe sono presenti
 - il telefono puo' restare collegato al portale mentre il Raspberry tenta la connessione con l'altra interfaccia
-- se la connessione finale riesce, l'hotspot temporaneo viene spento come nel flusso standard
+- quando `wlan1` resta connessa per 30 secondi, l'hotspot temporaneo viene spento automaticamente
 
-La scelta e' automatica anche se il file `portal.env` contiene ancora `CLIENT_WIFI_INTERFACE=wlan0`: quando NetworkManager rileva sia wlan0 sia wlan1, il portale usa sempre wlan1. All'avvio, i profili Wi-Fi creati dal portale in versioni precedenti vengono associati al dongle; se uno era attivo su wlan0, viene riattivato su wlan1.
+La scelta e' automatica anche se il file `portal.env` contiene ancora `CLIENT_WIFI_INTERFACE=wlan0`: quando NetworkManager rileva sia wlan0 sia wlan1, il portale usa sempre wlan1. All'avvio, i profili Wi-Fi creati dal portale vengono associati alla radio client rilevata. Se il dongle viene rimosso, gli stessi profili tornano automaticamente su wlan0.
 
 I nomi reali possono cambiare in base al dongle e alle regole di sistema. Sul Raspberry verifica con:
 
@@ -372,38 +381,38 @@ Con la sola wlan0, `CLIENT_WIFI_INTERFACE` e `WIFI_INTERFACE` continuano a funzi
 
 ## Recovery automatico hotspot
 
-Il portale ora include un monitor in background che distingue tre casi:
+Il monitor in background distingue la disponibilita' della Wi-Fi client dalla presenza di una via di amministrazione alternativa:
 
 - `boot senza Wi-Fi client`: il Raspberry attende `BOOT_CONNECTION_GRACE_SECONDS` prima di riaprire `Pi-Setup`
 - `perdita temporanea Wi-Fi`: se la Wi-Fi aziendale cade per pochi secondi o NetworkManager sta ancora tentando il recupero, l'hotspot non viene riattivato
 - `perdita prolungata Wi-Fi`: se la Wi-Fi client resta assente oltre `DISCONNECT_HOTSPOT_THRESHOLD_SECONDS`, l'hotspot viene riaperto automaticamente
+- `LAN stabile`: dopo `LAN_STABLE_SECONDS` l'hotspot viene spento, perche' il portale resta raggiungibile via Ethernet
+- `wlan1 stabile`: dopo `WIFI_CLIENT_STABLE_SECONDS` l'hotspot su wlan0 viene spento
+- `sola wlan0`: con una rete gestita salvata, ogni `HOTSPOT_CLIENT_RETRY_INTERVAL_SECONDS` l'hotspot viene sospeso brevemente per tentare la riconnessione
 
-La LAN cablata viene trattata come connettivita' separata: se `eth0` e' collegata, il portale mostra che la LAN e' presente, ma la sola LAN non blocca piu' il recovery dell'hotspot quando la Wi-Fi client non e' configurata o non e' connessa.
+Una LAN e' considerata disponibile soltanto quando l'interfaccia Ethernet e' `connected` e possiede un indirizzo IPv4. Non e' richiesto l'accesso a Internet.
 
 ### Matrice recovery LAN/Wi-Fi
 
-| LAN cablata | Wi-Fi client | Hotspot spento: cosa fa il recovery |
+| LAN cablata | Wi-Fi client | `Pi-Setup` |
 | --- | --- | --- |
-| Presente | Connessa | Non apre `Pi-Setup`: Wi-Fi client ok |
-| Presente | Configurata ma non connessa al boot | Attende il grace al boot; poi apre `Pi-Setup` |
-| Presente | Persa dopo una connessione valida | Attende la soglia di perdita prolungata; poi apre `Pi-Setup` |
-| Presente | Non configurata | Attende grace al boot; poi apre `Pi-Setup` anche se la LAN funziona |
-| Assente | Connessa | Non apre `Pi-Setup`: Wi-Fi client ok |
-| Assente | Configurata ma router non disponibile al boot | Attende il grace al boot; poi apre `Pi-Setup` |
-| Assente | Persa dopo una connessione valida | Attende la soglia di perdita prolungata; poi apre `Pi-Setup` |
-| Assente | Non configurata | Attende grace al boot; poi apre `Pi-Setup` |
+| Presente e stabile | Connessa | Spento |
+| Presente e stabile | Assente | Spento dopo 120 secondi; portale disponibile via LAN |
+| Appena collegata | Assente | Resta attivo durante la verifica di stabilita' |
+| Assente | `wlan1` connessa | Spento dopo 30 secondi di stabilita' |
+| Assente | Nessuna client | Attivo dopo il tempo di recovery |
+| Appena persa | Nessuna client | Si riattiva dopo 20 secondi se l'ultima via era la LAN |
 
-La soglia piu' importante da tarare e':
+Con la sola wlan0 e una rete gestita salvata:
 
-- `DISCONNECT_HOTSPOT_THRESHOLD_SECONDS=180`
+1. `Pi-Setup` resta disponibile per 5 minuti.
+2. Il servizio spegne temporaneamente l'hotspot, esegue una scansione e prova fino a due profili visibili, dando priorita' all'ultima rete usata.
+3. Se il tentativo riesce, wlan0 resta client e l'hotspot rimane spento.
+4. Se fallisce, `Pi-Setup` viene riattivato immediatamente.
 
-Con questo valore il Raspberry tollera circa 3 minuti di assenza rete prima di tornare in modalita' setup. E' una scelta prudente per ambienti con Wi-Fi instabile o AP che cambiano canale.
+Il portale mostra il motivo dello stato corrente e il tempo previsto alla prossima azione. I comandi manuali permettono di mantenere `Pi-Setup` per 10 minuti oppure spegnerlo quando esiste gia' un collegamento alternativo.
 
-Per ambienti piu' sensibili:
-
-- aumenta `RECONNECT_GRACE_SECONDS` se NetworkManager impiega tempo a riprendere la rete
-- aumenta `DISCONNECT_HOTSPOT_THRESHOLD_SECONDS` se vuoi ignorare blackout piu' lunghi
-- riduci `BOOT_CONNECTION_GRACE_SECONDS` solo se vuoi che l'hotspot compaia molto rapidamente al boot
+Le operazioni automatiche restano sospese durante provisioning, scansione completa e cooldown, evitando cambi di modalita' mentre l'utente sta configurando la rete.
 
 ### Profili pronti
 
@@ -546,9 +555,9 @@ grep -E 'PORTAL_TITLE|APP_VERSION' /etc/raspberry-wifi-portal/portal.env
 sudo systemctl restart raspberry-wifi-portal.service
 ```
 
-Il portale aggiornato mostra un badge `Versione 1.15.0`, il titolo `VT Network Manager`, la scheda `Radio Wi-Fi client`, il riquadro `Temperatura dispositivo` con stato termico, le etichette `wlan0 - Wi-Fi integrata` e, solo se presente, `wlan1 - dongle USB Wi-Fi`, oltre alla sezione `Documenti utente`. Con due radio, wlan1 e' selezionata automaticamente e wlan0 appare riservata all'hotspot. Se non trovi queste funzioni, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
+Il portale aggiornato mostra un badge `Versione 1.16.0`, lo stato `Gestione automatica hotspot`, i comandi `Attiva 10 min` e `Spegni`, la scheda `Radio Wi-Fi client`, la temperatura e le etichette delle radio rilevate. Con due radio, wlan1 e' selezionata automaticamente e wlan0 appare riservata all'hotspot. Se non trovi queste funzioni, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
 
-## Aggiornamento
+## Aggiornamento da archivio
 
 Per aggiornare:
 
@@ -569,7 +578,7 @@ Per facilitare l'installazione su Raspberry, la strada migliore e' pubblicare di
 Da PowerShell:
 
 ```powershell
-cd "C:\Users\Desktop-user\PROGETTI\SVILUPPO\Scheda prodotto editor\raspberry-wifi-portal"
+cd "C:\Users\Desktop-user\PROGETTI\SVILUPPO\Raspberry-wifi-portal"
 git init
 git add .
 git commit -m "Initial Raspberry Wi-Fi portal"
@@ -617,13 +626,13 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 
 ### 5. Aggiornare dal repository GitHub
 
-Sul Raspberry:
+Metodo consigliato, indipendente dalla presenza del vecchio clone:
 
 ```bash
-cd /tmp/raspberry-wifi-portal
-git pull
-sudo ./scripts/install.sh --profile balanced
+curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/andreakys/raspberry-wifi-portal.git main --profile balanced
 ```
+
+Il bootstrap scarica la branch `main`, reinstalla il servizio e conserva `/etc/raspberry-wifi-portal/portal.env`. Se hai ancora il clone originale, puoi anche eseguire `git pull` in quella cartella e rilanciare `sudo ./scripts/install.sh --profile balanced`.
 
 Per semplificare il repository su GitHub ti consiglio anche:
 

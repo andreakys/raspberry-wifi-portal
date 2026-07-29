@@ -23,6 +23,14 @@
           <strong>{{ access_sheet.portal_url }}</strong>
         </div>
         <div>
+          <span class="label">Pi-Setup</span>
+          <strong>{{ "Attivo" if status.hotspot_active else "Spento" }}</strong>
+        </div>
+        <div>
+          <span class="label">Radio client</span>
+          <strong>{{ status.client_wifi_interface_label }}</strong>
+        </div>
+        <div>
           <span class="label">Temperatura</span>
           <strong>{{ status.board_temperature.display }} - {{ status.board_temperature.status }}</strong>
         </div>
@@ -79,7 +87,22 @@
       </section>
 
       <section class="print-notes quick-section">
-        <h2>5. Controlla la temperatura</h2>
+        <h2>5. Gestisci Pi-Setup</h2>
+        <ul>
+          <li>Con wlan1 connessa stabilmente, Pi-Setup si spegne dopo circa 30 secondi.</li>
+          <li>Con LAN stabile, Pi-Setup si spegne dopo circa 2 minuti.</li>
+          <li>Senza LAN e senza Wi-Fi client, Pi-Setup rimane disponibile.</li>
+          <li>Con la sola wlan0 e una rete salvata, il sistema riprova automaticamente la connessione ogni 5 minuti.</li>
+        </ul>
+        <p>
+          Il riquadro <strong>Gestione automatica hotspot</strong> indica il motivo dello stato attuale.
+          <strong>Attiva 10 min</strong> mantiene temporaneamente l'hotspot; <strong>Spegni</strong> compare
+          soltanto quando il portale e' raggiungibile da un collegamento alternativo.
+        </p>
+      </section>
+
+      <section class="print-notes quick-section">
+        <h2>6. Controlla la temperatura</h2>
         <table class="temperature-table">
           <thead>
             <tr><th>Temperatura</th><th>Indicazione</th><th>Azione</th></tr>
@@ -98,7 +121,7 @@
       </section>
 
       <section class="print-notes quick-section">
-        <h2>6. Elimina una configurazione precedente</h2>
+        <h2>7. Elimina una configurazione precedente</h2>
         <p>
           In <strong>Connessioni salvate dal portale</strong> elimina un profilo <strong>setup-*</strong> e ricrealo.
           I profili di sistema e l'hotspot temporaneo restano protetti.

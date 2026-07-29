@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-APP_VERSION = "1.15.0"
+APP_VERSION = "1.16.0"
 DEFAULT_PORTAL_TITLE = "VT Network Manager"
 
 
@@ -47,6 +47,14 @@ class PortalConfig:
     reconnect_grace_seconds: int = int(os.getenv("RECONNECT_GRACE_SECONDS", "45"))
     disconnect_hotspot_threshold_seconds: int = int(os.getenv("DISCONNECT_HOTSPOT_THRESHOLD_SECONDS", "180"))
     hotspot_cooldown_seconds: int = int(os.getenv("HOTSPOT_COOLDOWN_SECONDS", "90"))
+    wifi_client_stable_seconds: int = int(os.getenv("WIFI_CLIENT_STABLE_SECONDS", "30"))
+    lan_stable_seconds: int = int(os.getenv("LAN_STABLE_SECONDS", "120"))
+    no_access_hotspot_delay_seconds: int = int(os.getenv("NO_ACCESS_HOTSPOT_DELAY_SECONDS", "20"))
+    hotspot_client_retry_interval_seconds: int = int(
+        os.getenv("HOTSPOT_CLIENT_RETRY_INTERVAL_SECONDS", "300")
+    )
+    hotspot_minimum_up_seconds: int = int(os.getenv("HOTSPOT_MINIMUM_UP_SECONDS", "30"))
+    manual_hotspot_hold_seconds: int = int(os.getenv("MANUAL_HOTSPOT_HOLD_SECONDS", "600"))
     network_status_tcp_enabled: bool = _bool_from_env("NETWORK_STATUS_TCP_ENABLED", True)
     network_status_tcp_port: int = int(os.getenv("NETWORK_STATUS_TCP_PORT", "6001"))
     network_status_tcp_interval_seconds: int = int(

@@ -74,21 +74,31 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 
 ## Aggiornamento
 
-Se il progetto e' gia' installato in `/opt/raspberry-wifi-portal`, puoi rilanciare:
+Metodo consigliato per scaricare e installare l'ultima versione da GitHub:
 
 ```bash
-cd /opt/raspberry-wifi-portal
+curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/andreakys/raspberry-wifi-portal.git main --profile balanced
+```
+
+Il comando scarica una copia pulita, reinstalla il servizio e conserva `/etc/raspberry-wifi-portal/portal.env`. Il profilo `balanced` aggiorna anche i timer della gestione automatica di `Pi-Setup`.
+
+Se hai conservato il clone originale del repository, puoi in alternativa usare:
+
+```bash
+cd /percorso/del/clone/raspberry-wifi-portal
+git pull
 sudo ./scripts/install.sh --profile balanced
 ```
 
-Il file `/etc/raspberry-wifi-portal/portal.env` viene conservato. Le opzioni passate allo script aggiornano solo i valori corrispondenti.
+Rilanciare `install.sh` direttamente da `/opt/raspberry-wifi-portal` reinstalla la versione gia' presente, ma non scarica aggiornamenti da GitHub.
+
+Le opzioni passate allo script aggiornano solo i valori corrispondenti.
 Se il file contiene ancora un vecchio titolo di default, come `Raspberry Pi Wi-Fi Setup`, `Wi-Fi Setup` o `Pi Network Manager`, l'installer lo migra a `VT Network Manager`.
 
 Se l'interfaccia non cambia dopo un aggiornamento:
 
 ```bash
-cd /opt/raspberry-wifi-portal
-sudo ./scripts/install.sh --profile balanced
+curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/main/scripts/bootstrap_from_github.sh | sudo bash -s -- https://github.com/andreakys/raspberry-wifi-portal.git main --profile balanced
 sudo systemctl restart raspberry-wifi-portal.service
 ```
 

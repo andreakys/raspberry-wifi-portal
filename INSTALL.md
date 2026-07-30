@@ -1,5 +1,14 @@
 # Installazione rapida
 
+<p align="center">
+  <img src="static/visualtronics-logo.png" alt="Visualtronics" width="250">
+</p>
+<p align="center">
+  <strong>Visualtronics s.a.s.</strong><br>
+  Via Galimberti, 75/2 &ndash; 10040 Piobesi Torinese<br>
+  C.F./P.I. 02638430047 &ndash; <a href="mailto:info@visualtronics.com">info@visualtronics.com</a>
+</p>
+
 Questa guida e' pensata per installare il portale direttamente su Raspberry Pi OS.
 
 ## Metodo consigliato: installazione guidata
@@ -30,7 +39,7 @@ Alla fine collegati all'hotspot configurato e apri:
 http://192.168.4.1
 ```
 
-Dopo il login il portale mostra `Documenti utente`: la guida rapida e la scheda accesso possono essere scaricate direttamente come PDF. La scheda contiene SSID hotspot, password, indirizzo portale e un QR cliccabile.
+Dopo il login il portale mostra `Documenti utente`: la guida rapida e la scheda accesso possono essere scaricate direttamente come PDF. Portale e documenti riportano logo e contatti Visualtronics; la scheda contiene anche SSID hotspot, password, indirizzo portale e QR cliccabile.
 In alto trovi anche il numero di versione, utile per verificare se il servizio sta eseguendo davvero l'ultimo codice installato.
 
 ## Installazione non interattiva

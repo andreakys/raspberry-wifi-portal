@@ -3,8 +3,12 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-APP_VERSION = "1.18.0"
+APP_VERSION = "1.19.0"
 DEFAULT_PORTAL_TITLE = "VT Network Manager"
+DEFAULT_COMPANY_NAME = "Visualtronics s.a.s."
+DEFAULT_COMPANY_ADDRESS = "Via Galimberti, 75/2 - 10040 Piobesi Torinese"
+DEFAULT_COMPANY_REGISTRATION = "C.F./P.I. 02638430047"
+DEFAULT_COMPANY_EMAIL = "info@visualtronics.com"
 
 
 def _bool_from_env(name: str, default: bool = False) -> bool:
@@ -41,6 +45,13 @@ class PortalConfig:
     connection_wait_seconds: int = int(os.getenv("CONNECTION_WAIT_SECONDS", "45"))
     portal_title: str = _env("PORTAL_TITLE", DEFAULT_PORTAL_TITLE)
     app_version: str = _env("APP_VERSION", APP_VERSION)
+    company_name: str = _env("COMPANY_NAME", DEFAULT_COMPANY_NAME)
+    company_address: str = _env("COMPANY_ADDRESS", DEFAULT_COMPANY_ADDRESS)
+    company_registration: str = _env(
+        "COMPANY_REGISTRATION",
+        DEFAULT_COMPANY_REGISTRATION,
+    )
+    company_email: str = _env("COMPANY_EMAIL", DEFAULT_COMPANY_EMAIL)
     auto_recovery_enabled: bool = _bool_from_env("AUTO_RECOVERY_ENABLED", True)
     recovery_check_interval_seconds: int = int(os.getenv("RECOVERY_CHECK_INTERVAL_SECONDS", "5"))
     boot_connection_grace_seconds: int = int(os.getenv("BOOT_CONNECTION_GRACE_SECONDS", "75"))

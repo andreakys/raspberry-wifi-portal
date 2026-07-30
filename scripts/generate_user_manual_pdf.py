@@ -1,8 +1,19 @@
 from __future__ import annotations
 
+import sys
 import textwrap
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from config import (
+    DEFAULT_COMPANY_ADDRESS,
+    DEFAULT_COMPANY_EMAIL,
+    DEFAULT_COMPANY_NAME,
+    DEFAULT_COMPANY_REGISTRATION,
+)
 from reportlab.graphics.shapes import Drawing, Line, Polygon, Rect, String
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
@@ -10,6 +21,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import (
+    Image,
     PageBreak,
     Paragraph,
     Preformatted,
@@ -19,15 +31,14 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-
-ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "docs" / "manuale-utente.md"
 OUTPUT_DIR = ROOT / "output" / "pdf"
 TMP_DIR = ROOT / "tmp" / "pdfs"
 OUTPUT_PDF = OUTPUT_DIR / "manuale-utente-raspberry-wifi-portal.pdf"
 DOCS_PDF = ROOT / "docs" / "manuale-utente-raspberry-wifi-portal.pdf"
+LOGO_PATH = ROOT / "static" / "visualtronics-logo.png"
 CODE_WRAP_WIDTH = 88
-DOCUMENT_VERSION = "1.18.0"
+DOCUMENT_VERSION = "1.19.0"
 DOCUMENT_DATE = "30 luglio 2026"
 
 
@@ -344,7 +355,12 @@ def build_story():
     styles = build_styles()
     story = []
 
-    story.append(Spacer(1, 2.2 * cm))
+    story.append(Spacer(1, 0.6 * cm))
+    if LOGO_PATH.exists():
+        logo = Image(str(LOGO_PATH), width=5.0 * cm, height=3.56 * cm)
+        logo.hAlign = "CENTER"
+        story.append(logo)
+        story.append(Spacer(1, 0.35 * cm))
     story.append(Paragraph("Manuale Utente", styles["TitlePage"]))
     story.append(Paragraph("VT Network Manager", styles["TitlePage"]))
     story.append(Spacer(1, 0.4 * cm))
@@ -383,6 +399,15 @@ def build_story():
         )
     )
     story.append(info_table)
+    story.append(Spacer(1, 0.65 * cm))
+    story.append(
+        Paragraph(
+            f"<b>{DEFAULT_COMPANY_NAME}</b><br/>"
+            f"{DEFAULT_COMPANY_ADDRESS}<br/>"
+            f"{DEFAULT_COMPANY_REGISTRATION} - {DEFAULT_COMPANY_EMAIL}",
+            styles["SmallMuted"],
+        )
+    )
     story.append(PageBreak())
 
     in_code_block = False
@@ -463,10 +488,26 @@ def build_story():
 
 def add_page_number(canvas, doc):
     canvas.saveState()
-    canvas.setFont("Helvetica", 8.5)
     canvas.setFillColor(colors.HexColor("#475569"))
-    canvas.drawString(doc.leftMargin, 1.2 * cm, "VT Network Manager")
-    canvas.drawRightString(A4[0] - doc.rightMargin, 1.2 * cm, f"Pagina {doc.page}")
+    canvas.setStrokeColor(colors.HexColor("#c8d7ea"))
+    canvas.setLineWidth(0.5)
+    canvas.line(doc.leftMargin, 1.55 * cm, A4[0] - doc.rightMargin, 1.55 * cm)
+    canvas.setFont("Helvetica", 6.5)
+    canvas.drawString(
+        doc.leftMargin,
+        1.15 * cm,
+        f"{DEFAULT_COMPANY_NAME} | {DEFAULT_COMPANY_ADDRESS}",
+    )
+    canvas.drawString(
+        doc.leftMargin,
+        0.78 * cm,
+        f"{DEFAULT_COMPANY_REGISTRATION} | {DEFAULT_COMPANY_EMAIL} | VT Network Manager",
+    )
+    canvas.drawRightString(
+        A4[0] - doc.rightMargin,
+        0.78 * cm,
+        f"Pagina {doc.page}",
+    )
     canvas.restoreState()
 
 
@@ -482,7 +523,7 @@ def main():
         topMargin=1.7 * cm,
         bottomMargin=1.8 * cm,
         title="Manuale Utente - VT Network Manager",
-        author="OpenAI Codex",
+        author=DEFAULT_COMPANY_NAME,
     )
     story = build_story()
     doc.build(story, onFirstPage=add_page_number, onLaterPages=add_page_number)

@@ -100,6 +100,20 @@ wifi_scan_state = {
 }
 
 
+def _company_details() -> dict[str, str]:
+    return {
+        "name": config.company_name,
+        "address": config.company_address,
+        "registration": config.company_registration,
+        "email": config.company_email,
+    }
+
+
+@app.context_processor
+def inject_company_details() -> dict[str, object]:
+    return {"company": _company_details()}
+
+
 def _access_sheet(status: dict[str, object]) -> dict[str, object]:
     portal_url = f"http://{status['portal_address']}"
     interfaces = status.get("interfaces", [])
@@ -112,6 +126,7 @@ def _access_sheet(status: dict[str, object]) -> dict[str, object]:
         "hotspot_password": config.hotspot_password,
         "portal_password": config.portal_password,
         "portal_title": config.portal_title,
+        "company": _company_details(),
         "network_interfaces": [
             {
                 "name": interface.get("name", ""),

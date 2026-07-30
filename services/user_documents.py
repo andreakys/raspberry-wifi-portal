@@ -1,19 +1,27 @@
 from __future__ import annotations
 
 from io import BytesIO
+from pathlib import Path
 from typing import Any
 from xml.sax.saxutils import escape
 
+from config import (
+    DEFAULT_COMPANY_ADDRESS,
+    DEFAULT_COMPANY_EMAIL,
+    DEFAULT_COMPANY_NAME,
+    DEFAULT_COMPANY_REGISTRATION,
+)
 from reportlab.graphics import renderPDF, renderSVG
 from reportlab.graphics.barcode.qr import QrCodeWidget
 from reportlab.graphics.shapes import Drawing
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import (
     Flowable,
+    Image,
     PageBreak,
     Paragraph,
     SimpleDocTemplate,
@@ -32,6 +40,7 @@ PALE_BLUE = colors.HexColor("#eef5fc")
 PALE_GREEN = colors.HexColor("#edf8f2")
 PALE_ORANGE = colors.HexColor("#fff6e8")
 WHITE = colors.white
+LOGO_PATH = Path(__file__).resolve().parents[1] / "static" / "visualtronics-logo.png"
 
 
 def _qr_drawing(value: str, size: float) -> Drawing:
@@ -167,6 +176,15 @@ def _styles() -> dict[str, ParagraphStyle]:
             textColor=MUTED,
             alignment=TA_CENTER,
         ),
+        "brand": ParagraphStyle(
+            "DocumentBrand",
+            parent=sample["BodyText"],
+            fontName="Helvetica",
+            fontSize=8,
+            leading=11,
+            textColor=MUTED,
+            alignment=TA_RIGHT,
+        ),
     }
 
 
@@ -181,17 +199,81 @@ def _link(url: str, label: str | None = None) -> str:
     )
 
 
-def _document_footer(canvas, document, app_version: str, document_name: str) -> None:
+def _company_values(access_data: dict[str, Any]) -> dict[str, str]:
+    raw_company = access_data.get("company", {})
+    company = raw_company if isinstance(raw_company, dict) else {}
+    return {
+        "name": str(company.get("name") or DEFAULT_COMPANY_NAME),
+        "address": str(company.get("address") or DEFAULT_COMPANY_ADDRESS),
+        "registration": str(
+            company.get("registration") or DEFAULT_COMPANY_REGISTRATION
+        ),
+        "email": str(company.get("email") or DEFAULT_COMPANY_EMAIL),
+    }
+
+
+def _brand_header(
+    access_data: dict[str, Any],
+    styles: dict[str, ParagraphStyle],
+) -> Table:
+    company = _company_values(access_data)
+    logo: Flowable
+    if LOGO_PATH.exists():
+        logo = Image(str(LOGO_PATH), width=32 * mm, height=22.8 * mm)
+    else:
+        logo = Paragraph("<b>Visualtronics</b>", styles["body"])
+
+    details = Paragraph(
+        f"<b>{_safe(company['name'])}</b><br/>"
+        f"{_safe(company['address'])}<br/>"
+        f"{_safe(company['registration'])}<br/>"
+        f"<link href='mailto:{_safe(company['email'])}' color='#0b6fb8'>"
+        f"{_safe(company['email'])}</link>",
+        styles["brand"],
+    )
+    table = Table([[logo, details]], colWidths=[42 * mm, 124 * mm])
+    table.setStyle(
+        TableStyle(
+            [
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("ALIGN", (0, 0), (0, 0), "LEFT"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), 0),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ("LINEBELOW", (0, 0), (-1, -1), 0.7, LINE),
+            ]
+        )
+    )
+    return table
+
+
+def _document_footer(
+    canvas,
+    document,
+    app_version: str,
+    document_name: str,
+    company: dict[str, str],
+) -> None:
     canvas.saveState()
     canvas.setStrokeColor(LINE)
     canvas.setLineWidth(0.6)
-    canvas.line(18 * mm, 14 * mm, A4[0] - 18 * mm, 14 * mm)
+    canvas.line(18 * mm, 15 * mm, A4[0] - 18 * mm, 15 * mm)
     canvas.setFillColor(MUTED)
-    canvas.setFont("Helvetica", 7.5)
-    canvas.drawString(18 * mm, 9.5 * mm, f"{document_name} - versione {app_version}")
+    canvas.setFont("Helvetica", 6.6)
+    canvas.drawString(
+        18 * mm,
+        11.2 * mm,
+        f"{company['name']} | {company['address']}",
+    )
+    canvas.drawString(
+        18 * mm,
+        7.8 * mm,
+        f"{company['registration']} | {company['email']} | {document_name} - versione {app_version}",
+    )
     canvas.drawRightString(
         A4[0] - 18 * mm,
-        9.5 * mm,
+        7.8 * mm,
         f"Pagina {document.page}",
     )
     canvas.restoreState()
@@ -222,11 +304,12 @@ def _build_pdf(
     title: str,
     app_version: str,
     document_name: str,
+    company: dict[str, str],
 ) -> bytes:
     buffer, document = _pdf_document(title, app_version, document_name)
 
     def footer(canvas, doc) -> None:
-        _document_footer(canvas, doc, app_version, document_name)
+        _document_footer(canvas, doc, app_version, document_name, company)
 
     document.build(story, onFirstPage=footer, onLaterPages=footer)
     return buffer.getvalue()
@@ -352,6 +435,8 @@ def build_access_sheet_pdf(
     styles = _styles()
     portal_url = access_data["portal_url"]
     story: list[Flowable] = [
+        _brand_header(access_data, styles),
+        Spacer(1, 3 * mm),
         Paragraph("DATI RISERVATI DI ACCESSO", styles["eyebrow"]),
         Paragraph(f"Scheda accesso - {_safe(page_title)}", styles["title"]),
         Paragraph(
@@ -359,7 +444,7 @@ def build_access_sheet_pdf(
             styles["intro"],
         ),
         _credentials_table(access_data, styles),
-        Spacer(1, 8 * mm),
+        Spacer(1, 5 * mm),
     ]
 
     qr_panel = Table(
@@ -444,17 +529,18 @@ def build_access_sheet_pdf(
                 ("BOX", (0, 0), (-1, -1), 0.7, colors.HexColor("#e6b866")),
                 ("LEFTPADDING", (0, 0), (-1, -1), 10),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 10),
-                ("TOPPADDING", (0, 0), (-1, -1), 8),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
             ]
         )
     )
-    story.extend([Spacer(1, 4 * mm), security_note])
+    story.extend([Spacer(1, 2 * mm), security_note])
     return _build_pdf(
         story,
         f"Scheda accesso - {page_title}",
         app_version,
         "Scheda accesso",
+        _company_values(access_data),
     )
 
 
@@ -527,6 +613,8 @@ def build_quick_guide_pdf(
     styles = _styles()
     portal_url = access_data["portal_url"]
     story: list[Flowable] = [
+        _brand_header(access_data, styles),
+        Spacer(1, 3 * mm),
         Paragraph("GUIDA RAPIDA CONFIGURAZIONE", styles["eyebrow"]),
         Paragraph(_safe(page_title), styles["title"]),
         Paragraph(
@@ -707,4 +795,5 @@ def build_quick_guide_pdf(
         f"Guida rapida - {page_title}",
         app_version,
         "Guida rapida",
+        _company_values(access_data),
     )

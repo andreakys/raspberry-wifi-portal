@@ -1,8 +1,17 @@
 # Manuale Utente
 
+<p align="center">
+  <img src="../static/visualtronics-logo.png" alt="Visualtronics" width="250">
+</p>
+<p align="center">
+  <strong>Visualtronics s.a.s.</strong><br>
+  Via Galimberti, 75/2 &ndash; 10040 Piobesi Torinese<br>
+  C.F./P.I. 02638430047 &ndash; <a href="mailto:info@visualtronics.com">info@visualtronics.com</a>
+</p>
+
 ## VT Network Manager
 
-Versione documento: 1.18.0
+Versione documento: 1.19.0
 Data: 30 luglio 2026
 
 ## 1. Scopo
@@ -16,6 +25,7 @@ Il sistema crea un hotspot temporaneo chiamato `Pi-Setup` quando il Raspberry no
 - hotspot temporaneo per il primo accesso
 - pagina web locale protetta da password per la configurazione
 - versione applicazione visibile per verificare gli aggiornamenti installati
+- logo, ragione sociale e contatti Visualtronics nel portale e nei documenti
 - temperatura scheda visibile nella dashboard
 - pulsante di riavvio protetto da login
 - scheda accesso con link e QR cliccabili, scaricabile direttamente in PDF
@@ -430,6 +440,14 @@ Per ogni documento sono disponibili:
 - `Apri`, per consultare l'anteprima HTML e usare eventualmente la stampa del browser
 - `Scarica PDF`, per generare direttamente un PDF A4 con impaginazione costante da telefono o PC
 
+Portale, scheda accesso, guida rapida e manuale riportano il logo Visualtronics e i riferimenti:
+
+```text
+Visualtronics s.a.s.
+Via Galimberti, 75/2 - 10040 Piobesi Torinese
+C.F./P.I. 02638430047 - info@visualtronics.com
+```
+
 La scheda accesso e' una pagina semplice con:
 
 - nome hotspot temporaneo
@@ -677,6 +695,7 @@ Verifica nel portale la presenza di:
 - stato `Gestione automatica hotspot` con motivazione e conto alla rovescia
 - comandi `Attiva 10 min` e `Spegni` per Pi-Setup
 - sezione `Documenti utente` con download PDF diretto
+- logo e riferimenti Visualtronics su portale e documenti
 - scheda accesso con link e QR cliccabili
 - MAC address visibile per LAN e radio Wi-Fi
 - guida rapida senza dati live di temperatura o stato corrente

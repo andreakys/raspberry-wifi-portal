@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 from services.user_documents import (
+    LOGO_PATH,
     build_access_sheet_pdf,
     build_portal_qr_svg,
     build_quick_guide_pdf,
@@ -17,6 +18,12 @@ class UserDocumentTests(unittest.TestCase):
             "hotspot_password": "HotspotTest123!",
             "portal_password": "PortalTest456!",
             "portal_title": "VT Network Manager",
+            "company": {
+                "name": "Visualtronics s.a.s.",
+                "address": "Via Galimberti, 75/2 - 10040 Piobesi Torinese",
+                "registration": "C.F./P.I. 02638430047",
+                "email": "info@visualtronics.com",
+            },
             "network_interfaces": [
                 {
                     "name": "eth0",
@@ -40,10 +47,14 @@ class UserDocumentTests(unittest.TestCase):
         self.assertIn(b"</svg>", svg)
         self.assertGreater(len(svg), 1_000)
 
+    def test_visualtronics_logo_is_packaged(self) -> None:
+        self.assertTrue(LOGO_PATH.is_file())
+        self.assertGreater(LOGO_PATH.stat().st_size, 10_000)
+
     def test_access_sheet_is_a_pdf_with_clickable_portal_link(self) -> None:
         pdf = build_access_sheet_pdf(
             "VT Network Manager",
-            "1.18.0",
+            "1.19.0",
             self.access_data,
         )
 
@@ -55,7 +66,7 @@ class UserDocumentTests(unittest.TestCase):
     def test_quick_guide_is_a_pdf_with_clickable_portal_link(self) -> None:
         pdf = build_quick_guide_pdf(
             "VT Network Manager",
-            "1.18.0",
+            "1.19.0",
             self.access_data,
         )
 
@@ -72,7 +83,7 @@ class UserDocumentTests(unittest.TestCase):
             "portal_password": "C&D<456>",
         }
 
-        pdf = build_access_sheet_pdf("VT Network Manager", "1.18.0", data)
+        pdf = build_access_sheet_pdf("VT Network Manager", "1.19.0", data)
 
         self.assertTrue(pdf.startswith(b"%PDF-"))
 

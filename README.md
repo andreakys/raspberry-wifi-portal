@@ -1,5 +1,14 @@
 # VT Network Manager
 
+<p align="center">
+  <img src="static/visualtronics-logo.png" alt="Visualtronics" width="250">
+</p>
+<p align="center">
+  <strong>Visualtronics s.a.s.</strong><br>
+  Via Galimberti, 75/2 &ndash; 10040 Piobesi Torinese<br>
+  C.F./P.I. 02638430047 &ndash; <a href="mailto:info@visualtronics.com">info@visualtronics.com</a>
+</p>
+
 Portale di gestione rete per display a LED: configura hotspot, Wi-Fi client, LAN cablata, indirizzi IP e stato del dispositivo, inclusi i casi base `WPA2/WPA3 Personal` e `802.1X`.
 
 ## Documentazione
@@ -56,6 +65,7 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 - portale web locale da smartphone o tablet
 - accesso protetto da password del portale
 - numero versione visibile in login, dashboard e API status
+- logo e riferimenti Visualtronics nel portale e nei documenti
 - temperatura scheda visibile nella dashboard
 - pulsante di riavvio protetto da login
 - scheda accesso con link e QR cliccabili, scaricabile direttamente in PDF
@@ -109,10 +119,12 @@ raspberry-wifi-portal/
 |   |-- scan_policy.py
 |   `-- user_documents.py
 |-- static/
-|   `-- styles.css
+|   |-- styles.css
+|   `-- visualtronics-logo.png
 |-- systemd/
 |   `-- raspberry-wifi-portal.service
 |-- templates/
+|   |-- _brand.html
 |   |-- access_sheet.html
 |   |-- index.html
 |   |-- login.html
@@ -132,7 +144,7 @@ raspberry-wifi-portal/
   Avvia Flask, espone il form HTML e richiama il service layer per scansione Wi-Fi, hotspot e provisioning della rete.
 
 - `config.py`
-  Centralizza la configurazione da variabili d'ambiente: interfaccia Wi-Fi, SSID hotspot, password hotspot, password portale, porta HTTP e timeout.
+  Centralizza configurazione di rete, credenziali, branding aziendale, porta HTTP e timeout.
 
 - `services/network_manager.py`
   Incapsula tutte le chiamate a `nmcli`:
@@ -155,6 +167,9 @@ raspberry-wifi-portal/
 
 - `templates/index.html`
   Pagina principale con form di configurazione, documenti PDF e scansione reti.
+
+- `templates/_brand.html`
+  Fascia riutilizzabile con logo, ragione sociale, indirizzo, partita IVA ed email.
 
 - `templates/access_sheet.html`
   Anteprima pulita dei dati di accesso con link e QR cliccabili.
@@ -282,6 +297,10 @@ Il backend crea una nuova connessione `NetworkManager`, restituisce subito una p
 | `PORTAL_PORT` | `80` | Porta HTTP |
 | `PORTAL_TITLE` | `VT Network Manager` | Titolo mostrato nel portale |
 | `APP_VERSION` | versione del codice | Versione mostrata nel portale |
+| `COMPANY_NAME` | `Visualtronics s.a.s.` | Ragione sociale mostrata nel branding |
+| `COMPANY_ADDRESS` | indirizzo Visualtronics | Indirizzo mostrato nel portale e nei documenti |
+| `COMPANY_REGISTRATION` | `C.F./P.I. 02638430047` | Identificativo fiscale aziendale |
+| `COMPANY_EMAIL` | `info@visualtronics.com` | Email aziendale cliccabile |
 | `PORTAL_PASSWORD` | generata dall'installer | Password di accesso al portale web |
 | `PORTAL_SESSION_SECRET` | generata dall'installer | Chiave server per firmare la sessione di login |
 | `WIFI_INTERFACE` | `wlan0` | Interfaccia Wi-Fi storica, usata come default per hotspot e client |
@@ -568,7 +587,7 @@ grep -E 'PORTAL_TITLE|APP_VERSION' /etc/raspberry-wifi-portal/portal.env
 sudo systemctl restart raspberry-wifi-portal.service
 ```
 
-Il portale aggiornato mostra un badge `Versione 1.18.0`, lo stato `Gestione automatica hotspot`, i comandi `Attiva 10 min` e `Spegni`, la scheda `Radio Wi-Fi client`, temperatura, MAC address delle interfacce e i pulsanti `Scarica PDF` nei documenti utente. Con due radio, wlan1 e' selezionata automaticamente e wlan0 appare riservata all'hotspot. Se non trovi queste funzioni, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
+Il portale aggiornato mostra un badge `Versione 1.19.0`, il logo e i contatti Visualtronics, lo stato `Gestione automatica hotspot`, i comandi `Attiva 10 min` e `Spegni`, temperatura, MAC address e i pulsanti `Scarica PDF`. Con due radio, wlan1 e' selezionata automaticamente e wlan0 appare riservata all'hotspot. Se non trovi queste funzioni, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
 
 ## Aggiornamento da archivio
 

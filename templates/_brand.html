@@ -1,0 +1,13 @@
+<div class="brand-lockup">
+  <img
+    class="brand-logo"
+    src="{{ url_for('static', filename='visualtronics-logo.png') }}"
+    alt="Visualtronics"
+  >
+  <address class="brand-details">
+    <strong>{{ company.name }}</strong>
+    <span>{{ company.address }}</span>
+    <span>{{ company.registration }}</span>
+    <a href="mailto:{{ company.email }}">{{ company.email }}</a>
+  </address>
+</div>

@@ -129,6 +129,8 @@
             <div>
               <strong>{{ interface.display_name }}</strong>
               <small>{{ interface.type }} - {{ interface.state }}</small>
+              <span class="label">MAC address</span>
+              <span class="mac-address">{{ interface.mac_address or "n/d" }}</span>
             </div>
             <div>
               <span class="label">Connessione</span>
@@ -418,7 +420,7 @@
           </div>
           <div>
             <strong>Scheda accesso</strong>
-            <small>SSID, password, link e QR cliccabile del portale.</small>
+            <small>SSID, password, link, QR e MAC address delle interfacce.</small>
           </div>
           <div class="document-link-group">
             <a class="secondary-link" href="/access-sheet" target="_blank" rel="noopener">Apri</a>

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from io import BytesIO
+from typing import Any
 from xml.sax.saxutils import escape
 
 from reportlab.graphics import renderPDF, renderSVG
@@ -232,7 +233,7 @@ def _build_pdf(
 
 
 def _credentials_table(
-    access_data: dict[str, str],
+    access_data: dict[str, Any],
     styles: dict[str, ParagraphStyle],
 ) -> Table:
     rows = [
@@ -284,10 +285,69 @@ def _credentials_table(
     return table
 
 
+def _hardware_table(
+    access_data: dict[str, Any],
+    styles: dict[str, ParagraphStyle],
+) -> Table | None:
+    raw_interfaces = access_data.get("network_interfaces", [])
+    if not isinstance(raw_interfaces, list):
+        return None
+
+    rows: list[list[Paragraph]] = [
+        [
+            Paragraph("<b>INTERFACCIA</b>", styles["card_label"]),
+            Paragraph("<b>TIPO</b>", styles["card_label"]),
+            Paragraph("<b>MAC ADDRESS</b>", styles["card_label"]),
+        ]
+    ]
+    for interface in raw_interfaces:
+        if not isinstance(interface, dict):
+            continue
+        interface_type = str(interface.get("type") or "")
+        type_label = "LAN cablata" if interface_type == "ethernet" else "Wi-Fi"
+        rows.append(
+            [
+                Paragraph(
+                    f"<b>{_safe(interface.get('display_name') or interface.get('name') or 'n/d')}</b>",
+                    styles["body"],
+                ),
+                Paragraph(type_label, styles["body"]),
+                Paragraph(
+                    f"<font name='Courier'>{_safe(interface.get('mac_address') or 'n/d')}</font>",
+                    styles["body"],
+                ),
+            ]
+        )
+
+    if len(rows) == 1:
+        return None
+
+    table = Table(
+        rows,
+        colWidths=[68 * mm, 33 * mm, 65 * mm],
+        repeatRows=1,
+    )
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), PALE_BLUE),
+                ("BOX", (0, 0), (-1, -1), 0.7, LINE),
+                ("INNERGRID", (0, 0), (-1, -1), 0.5, LINE),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 8),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ]
+        )
+    )
+    return table
+
+
 def build_access_sheet_pdf(
     page_title: str,
     app_version: str,
-    access_data: dict[str, str],
+    access_data: dict[str, Any],
 ) -> bytes:
     styles = _styles()
     portal_url = access_data["portal_url"]
@@ -337,10 +397,18 @@ def build_access_sheet_pdf(
             ]
         )
     )
+    story.extend([qr_panel, Spacer(1, 4 * mm)])
+    hardware_table = _hardware_table(access_data, styles)
+    if hardware_table is not None:
+        story.extend(
+            [
+                Paragraph("Identificazione hardware", styles["heading"]),
+                hardware_table,
+                Spacer(1, 3 * mm),
+            ]
+        )
     story.extend(
         [
-            qr_panel,
-            Spacer(1, 5 * mm),
             Paragraph("Procedura rapida", styles["heading"]),
             Paragraph(
                 "<b>1.</b> Collega telefono o PC alla rete Wi-Fi indicata come hotspot temporaneo.",
@@ -454,7 +522,7 @@ def _rule_box(
 def build_quick_guide_pdf(
     page_title: str,
     app_version: str,
-    access_data: dict[str, str],
+    access_data: dict[str, Any],
 ) -> bytes:
     styles = _styles()
     portal_url = access_data["portal_url"]

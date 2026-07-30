@@ -27,7 +27,7 @@ TMP_DIR = ROOT / "tmp" / "pdfs"
 OUTPUT_PDF = OUTPUT_DIR / "manuale-utente-raspberry-wifi-portal.pdf"
 DOCS_PDF = ROOT / "docs" / "manuale-utente-raspberry-wifi-portal.pdf"
 CODE_WRAP_WIDTH = 88
-DOCUMENT_VERSION = "1.17.0"
+DOCUMENT_VERSION = "1.18.0"
 DOCUMENT_DATE = "30 luglio 2026"
 
 
@@ -272,7 +272,7 @@ def access_sheet_diagram() -> Drawing:
             ("Consegna", "utente autorizzato", "#fff7ed"),
             ("Setup", "configura rete", "#eaf7ef"),
         ],
-        "La scheda contiene credenziali, link e QR cliccabili del portale.",
+        "La scheda contiene credenziali, link, QR e MAC address delle interfacce.",
     )
 
 

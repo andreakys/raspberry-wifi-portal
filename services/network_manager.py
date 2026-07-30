@@ -587,6 +587,7 @@ class NetworkManagerService:
                     "gateway": self._first_device_value(device, "IP4.GATEWAY"),
                     "dns": self._device_values(device, "IP4.DNS"),
                     "ipv4_method": self._connection_ipv4_method(connection_name),
+                    "mac_address": self._device_mac_address(device),
                     "configurable": not is_hotspot_interface,
                     "protected_reason": "hotspot-attivo" if is_hotspot_interface else None,
                 }
@@ -1108,6 +1109,16 @@ class NetworkManagerService:
     def _first_device_value(self, interface: str, field: str) -> str | None:
         values = self._device_values(interface, field)
         return values[0] if values else None
+
+    def _device_mac_address(self, interface: str) -> str | None:
+        value = self._first_device_value(interface, "GENERAL.HWADDR")
+        if not value:
+            return None
+
+        normalized = value.replace("\\:", ":").strip().upper()
+        if not re.fullmatch(r"(?:[0-9A-F]{2}:){5}[0-9A-F]{2}", normalized):
+            return None
+        return normalized
 
     def _split_dns(self, dns: str) -> list[str]:
         return [item for item in re.split(r"[\s,;]+", dns.strip()) if item]

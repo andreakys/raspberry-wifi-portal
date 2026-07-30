@@ -100,8 +100,11 @@ wifi_scan_state = {
 }
 
 
-def _access_sheet(status: dict[str, object]) -> dict[str, str]:
+def _access_sheet(status: dict[str, object]) -> dict[str, object]:
     portal_url = f"http://{status['portal_address']}"
+    interfaces = status.get("interfaces", [])
+    if not isinstance(interfaces, list):
+        interfaces = []
 
     return {
         "portal_url": portal_url,
@@ -109,6 +112,16 @@ def _access_sheet(status: dict[str, object]) -> dict[str, str]:
         "hotspot_password": config.hotspot_password,
         "portal_password": config.portal_password,
         "portal_title": config.portal_title,
+        "network_interfaces": [
+            {
+                "name": interface.get("name", ""),
+                "display_name": interface.get("display_name", ""),
+                "type": interface.get("type", ""),
+                "mac_address": interface.get("mac_address"),
+            }
+            for interface in interfaces
+            if isinstance(interface, dict)
+        ],
     }
 
 

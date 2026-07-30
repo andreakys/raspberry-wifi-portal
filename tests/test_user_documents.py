@@ -17,6 +17,20 @@ class UserDocumentTests(unittest.TestCase):
             "hotspot_password": "HotspotTest123!",
             "portal_password": "PortalTest456!",
             "portal_title": "VT Network Manager",
+            "network_interfaces": [
+                {
+                    "name": "eth0",
+                    "display_name": "eth0",
+                    "type": "ethernet",
+                    "mac_address": "DC:A6:32:01:02:03",
+                },
+                {
+                    "name": "wlan0",
+                    "display_name": "wlan0 - Wi-Fi integrata",
+                    "type": "wifi",
+                    "mac_address": "B8:27:EB:04:05:06",
+                },
+            ],
         }
 
     def test_portal_qr_is_svg(self) -> None:
@@ -29,7 +43,7 @@ class UserDocumentTests(unittest.TestCase):
     def test_access_sheet_is_a_pdf_with_clickable_portal_link(self) -> None:
         pdf = build_access_sheet_pdf(
             "VT Network Manager",
-            "1.17.0",
+            "1.18.0",
             self.access_data,
         )
 
@@ -41,7 +55,7 @@ class UserDocumentTests(unittest.TestCase):
     def test_quick_guide_is_a_pdf_with_clickable_portal_link(self) -> None:
         pdf = build_quick_guide_pdf(
             "VT Network Manager",
-            "1.17.0",
+            "1.18.0",
             self.access_data,
         )
 
@@ -58,7 +72,7 @@ class UserDocumentTests(unittest.TestCase):
             "portal_password": "C&D<456>",
         }
 
-        pdf = build_access_sheet_pdf("VT Network Manager", "1.17.0", data)
+        pdf = build_access_sheet_pdf("VT Network Manager", "1.18.0", data)
 
         self.assertTrue(pdf.startswith(b"%PDF-"))
 

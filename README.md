@@ -66,6 +66,7 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 - supporto `WPA2/WPA3 Personal`
 - supporto base `802.1X` con `PEAP`, `TTLS`, `TLS`
 - visualizzazione degli indirizzi IPv4 correnti di Wi-Fi e LAN
+- visualizzazione dei MAC address di LAN e radio Wi-Fi
 - configurazione IPv4 DHCP/statico per interfacce non usate dall'hotspot attivo
 - recovery automatico dell'hotspot dopo boot fallito o perdita prolungata rete
 - spegnimento automatico di `Pi-Setup` dopo Wi-Fi client o LAN stabili
@@ -231,6 +232,7 @@ La scheda accesso contiene:
 - indirizzo del portale
 - password portale
 - QR cliccabile per aprire il portale
+- MAC address delle interfacce LAN e Wi-Fi presenti
 
 I pulsanti `Scarica PDF` generano direttamente documenti A4 pronti da inviare o stampare. Nella scheda accesso, sia l'indirizzo sia il QR restano cliccabili anche dentro il PDF. E' comunque disponibile l'anteprima HTML con il comando `Stampa`. La scheda contiene password operative, quindi va condivisa solo con persone autorizzate.
 
@@ -260,7 +262,7 @@ Se accedi dal PC tramite cavo LAN, lo stesso pulsante puo' spegnere temporaneame
 
 Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` in alto: `1` indica solo la radio della scheda, `2` con nomi come `wlan0, wlan1` indica anche un dongle USB. Quando entrambe sono presenti, il portale seleziona automaticamente `wlan1` per scansione e connessione finale e riserva `wlan0` all'hotspot.
 
-Se con entrambe le radio il form permette ancora di usare `wlan0` per il client, verifica che il portale mostri almeno la versione `1.15.0`. La versione `1.16.0` aggiunge la gestione automatica di accensione e spegnimento di `Pi-Setup`; la `1.17.0` aggiunge i PDF diretti e i collegamenti QR cliccabili.
+Se con entrambe le radio il form permette ancora di usare `wlan0` per il client, verifica che il portale mostri almeno la versione `1.15.0`. La versione `1.16.0` aggiunge la gestione automatica di accensione e spegnimento di `Pi-Setup`; la `1.17.0` aggiunge i PDF diretti e i collegamenti QR cliccabili; la `1.18.0` mostra i MAC address delle interfacce.
 
 ### 4. Provisioning
 
@@ -452,6 +454,7 @@ Subito sotto il riepilogo iniziale, il portale mostra la sezione `Interfacce di 
 
 - nome interfaccia, ad esempio `eth0` o `wlan0`
 - tipo e stato
+- MAC address
 - profilo NetworkManager attivo
 - indirizzi IPv4 correnti
 - gateway
@@ -565,7 +568,7 @@ grep -E 'PORTAL_TITLE|APP_VERSION' /etc/raspberry-wifi-portal/portal.env
 sudo systemctl restart raspberry-wifi-portal.service
 ```
 
-Il portale aggiornato mostra un badge `Versione 1.17.0`, lo stato `Gestione automatica hotspot`, i comandi `Attiva 10 min` e `Spegni`, la scheda `Radio Wi-Fi client`, la temperatura, le etichette delle radio rilevate e i pulsanti `Scarica PDF` nei documenti utente. Con due radio, wlan1 e' selezionata automaticamente e wlan0 appare riservata all'hotspot. Se non trovi queste funzioni, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
+Il portale aggiornato mostra un badge `Versione 1.18.0`, lo stato `Gestione automatica hotspot`, i comandi `Attiva 10 min` e `Spegni`, la scheda `Radio Wi-Fi client`, temperatura, MAC address delle interfacce e i pulsanti `Scarica PDF` nei documenti utente. Con due radio, wlan1 e' selezionata automaticamente e wlan0 appare riservata all'hotspot. Se non trovi queste funzioni, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
 
 ## Aggiornamento da archivio
 

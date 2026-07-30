@@ -451,7 +451,7 @@ select:focus {
 
 .interface-item {
   display: grid;
-  grid-template-columns: minmax(120px, 0.8fr) repeat(5, minmax(110px, 1fr));
+  grid-template-columns: minmax(170px, 0.95fr) repeat(5, minmax(96px, 1fr));
   gap: 12px;
   align-items: start;
   padding: 14px 16px;
@@ -471,8 +471,17 @@ select:focus {
   margin-top: 4px;
 }
 
+.interface-item > div:first-child .label {
+  margin-top: 10px;
+}
+
 .interface-item span:not(.label) {
   overflow-wrap: anywhere;
+}
+
+.mac-address {
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  white-space: nowrap;
 }
 
 .managed-connections {
@@ -719,6 +728,30 @@ select:focus {
   margin: 6px 0 0;
 }
 
+.hardware-identification > .muted {
+  margin: 6px 0 0;
+}
+
+.hardware-interface-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.hardware-interface-list article {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.hardware-interface-list strong {
+  overflow-wrap: anywhere;
+}
+
 .quick-guide-sheet {
   max-width: 920px;
 }
@@ -777,6 +810,12 @@ select:focus {
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: 0.88rem;
+}
+
+@media (max-width: 1040px) {
+  .interface-item {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 860px) {
@@ -878,6 +917,10 @@ select:focus {
   }
 
   .quick-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .hardware-interface-list {
     grid-template-columns: 1fr;
   }
 }

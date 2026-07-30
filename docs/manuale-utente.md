@@ -2,7 +2,7 @@
 
 ## VT Network Manager
 
-Versione documento: 1.17.0
+Versione documento: 1.18.0
 Data: 30 luglio 2026
 
 ## 1. Scopo
@@ -29,6 +29,7 @@ Il sistema crea un hotspot temporaneo chiamato `Pi-Setup` quando il Raspberry no
 - supporto reti WPA2/WPA3 Personal
 - supporto base reti aziendali 802.1X: `PEAP`, `TTLS`, `TLS`
 - visualizzazione indirizzi IPv4 correnti di Wi-Fi e LAN
+- visualizzazione MAC address delle interfacce LAN e Wi-Fi
 - configurazione IPv4 DHCP/statico per interfacce non usate dall'hotspot attivo
 - installazione guidata con parametri interattivi
 - installazione non interattiva per provisioning ripetibili
@@ -325,6 +326,7 @@ Per ogni interfaccia vengono mostrati:
 
 - nome interfaccia, ad esempio `eth0` o `wlan0`
 - tipo e stato
+- MAC address dell'interfaccia
 - profilo NetworkManager attivo
 - indirizzi IPv4 correnti
 - gateway
@@ -343,6 +345,8 @@ Per un indirizzo statico usa il formato:
 ```
 
 Gateway e DNS sono opzionali. I DNS possono essere separati da virgola, spazio o punto e virgola.
+
+Il MAC address identifica la scheda di rete anche quando l'indirizzo IP cambia. `eth0` identifica la LAN cablata, `wlan0` la radio Wi-Fi integrata e `wlan1` il dongle USB quando presente. Se il dongle non e' collegato, wlan1 non viene mostrata.
 
 Nota di sicurezza operativa: l'interfaccia che sta servendo l'hotspot temporaneo viene mostrata ma non puo' essere modificata finche' l'hotspot e' attivo. Questo evita di perdere il portale durante il setup. La funzione e' pensata soprattutto per configurare la LAN cablata, ad esempio `eth0`.
 
@@ -419,7 +423,7 @@ Se hai usato l'installazione guidata e hai lasciato vuota la password portale, l
 Dopo il login, la sezione `Documenti utente` permette di consultare due documenti:
 
 - `Guida rapida configurazione`, con i passaggi per LAN, Wi-Fi, radio, recovery e profili salvati
-- `Scheda accesso`, con SSID hotspot, password, indirizzo e QR del portale
+- `Scheda accesso`, con SSID hotspot, password, indirizzo, QR e MAC address del dispositivo
 
 Per ogni documento sono disponibili:
 
@@ -433,8 +437,10 @@ La scheda accesso e' una pagina semplice con:
 - indirizzo portale, ad esempio `http://192.168.4.1`
 - password portale
 - QR del portale
+- MAC address di eth0 e delle radio Wi-Fi presenti
 
 Nel PDF della scheda sia l'indirizzo testuale sia il QR sono cliccabili. Il QR apre il portale dopo che il telefono o il PC e' stato collegato a `Pi-Setup`.
+La sezione `Identificazione hardware` permette di riconoscere la scheda anche dopo un cambio IP. wlan1 compare soltanto quando il dongle USB Wi-Fi e' realmente collegato.
 
 La scheda contiene password operative: stampala o inviala solo a persone autorizzate.
 
@@ -672,6 +678,7 @@ Verifica nel portale la presenza di:
 - comandi `Attiva 10 min` e `Spegni` per Pi-Setup
 - sezione `Documenti utente` con download PDF diretto
 - scheda accesso con link e QR cliccabili
+- MAC address visibile per LAN e radio Wi-Fi
 - guida rapida senza dati live di temperatura o stato corrente
 
 ## 12. Pubblicazione su GitHub

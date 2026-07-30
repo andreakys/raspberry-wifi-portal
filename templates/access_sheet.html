@@ -64,6 +64,22 @@
         </article>
       </section>
 
+      <section class="print-notes hardware-identification">
+        <h2>Identificazione hardware</h2>
+        <p class="muted">I MAC address identificano le interfacce anche quando gli indirizzi IP cambiano.</p>
+        <div class="hardware-interface-list">
+          {% for interface in access_sheet.network_interfaces %}
+          <article>
+            <span class="label">{{ "LAN cablata" if interface.type == "ethernet" else "Radio Wi-Fi" }}</span>
+            <strong>{{ interface.display_name or interface.name }}</strong>
+            <span class="mac-address">{{ interface.mac_address or "n/d" }}</span>
+          </article>
+          {% else %}
+          <p class="muted">Nessuna interfaccia di rete rilevata.</p>
+          {% endfor %}
+        </div>
+      </section>
+
       <section class="print-notes">
         <h2>Come usare questa scheda</h2>
         <ol>

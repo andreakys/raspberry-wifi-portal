@@ -68,7 +68,7 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 - logo e riferimenti Visualtronics nel portale e nei documenti
 - temperatura scheda visibile nella dashboard
 - pulsante di riavvio protetto da login
-- scheda accesso con link e QR cliccabili, scaricabile direttamente in PDF
+- scheda accesso A4 con link e QR cliccabili, ottimizzata per LAN e due radio Wi-Fi
 - pulsante di scansione reti Wi-Fi disponibili
 - scansione adattiva con riavvio temporaneo hotspot soltanto quando la radio selezionata lo richiede
 - separazione opzionale tra interfaccia hotspot e interfaccia Wi-Fi client
@@ -587,7 +587,7 @@ grep -E 'PORTAL_TITLE|APP_VERSION' /etc/raspberry-wifi-portal/portal.env
 sudo systemctl restart raspberry-wifi-portal.service
 ```
 
-Il portale aggiornato mostra un badge `Versione 1.19.0`, il logo e i contatti Visualtronics, lo stato `Gestione automatica hotspot`, i comandi `Attiva 10 min` e `Spegni`, temperatura, MAC address e i pulsanti `Scarica PDF`. Con due radio, wlan1 e' selezionata automaticamente e wlan0 appare riservata all'hotspot. Se non trovi queste funzioni, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
+Il portale aggiornato mostra un badge `Versione 1.19.1`, il logo e i contatti Visualtronics, lo stato `Gestione automatica hotspot`, i comandi `Attiva 10 min` e `Spegni`, temperatura, MAC address e i pulsanti `Scarica PDF`. Con due radio, wlan1 e' selezionata automaticamente e wlan0 appare riservata all'hotspot. Se non trovi queste funzioni, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
 
 ## Aggiornamento da archivio
 

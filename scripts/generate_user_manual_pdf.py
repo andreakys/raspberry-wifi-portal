@@ -38,7 +38,7 @@ OUTPUT_PDF = OUTPUT_DIR / "manuale-utente-raspberry-wifi-portal.pdf"
 DOCS_PDF = ROOT / "docs" / "manuale-utente-raspberry-wifi-portal.pdf"
 LOGO_PATH = ROOT / "static" / "visualtronics-logo.png"
 CODE_WRAP_WIDTH = 88
-DOCUMENT_VERSION = "1.19.0"
+DOCUMENT_VERSION = "1.19.1"
 DOCUMENT_DATE = "30 luglio 2026"
 
 

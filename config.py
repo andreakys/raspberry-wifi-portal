@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-APP_VERSION = "1.19.0"
+APP_VERSION = "1.19.1"
 DEFAULT_PORTAL_TITLE = "VT Network Manager"
 DEFAULT_COMPANY_NAME = "Visualtronics s.a.s."
 DEFAULT_COMPANY_ADDRESS = "Via Galimberti, 75/2 - 10040 Piobesi Torinese"

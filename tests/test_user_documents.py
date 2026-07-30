@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import unittest
 
 from services.user_documents import (
@@ -37,6 +38,12 @@ class UserDocumentTests(unittest.TestCase):
                     "type": "wifi",
                     "mac_address": "B8:27:EB:04:05:06",
                 },
+                {
+                    "name": "wlan1",
+                    "display_name": "wlan1 - dongle USB Wi-Fi",
+                    "type": "wifi",
+                    "mac_address": "00:C0:CA:07:08:09",
+                },
             ],
         }
 
@@ -54,7 +61,7 @@ class UserDocumentTests(unittest.TestCase):
     def test_access_sheet_is_a_pdf_with_clickable_portal_link(self) -> None:
         pdf = build_access_sheet_pdf(
             "VT Network Manager",
-            "1.19.0",
+            "1.19.1",
             self.access_data,
         )
 
@@ -62,11 +69,12 @@ class UserDocumentTests(unittest.TestCase):
         self.assertGreater(len(pdf), 4_000)
         self.assertGreaterEqual(pdf.count(b"http://192.168.4.1"), 2)
         self.assertIn(b"/URI", pdf)
+        self.assertEqual(len(re.findall(rb"/Type\s*/Page\b", pdf)), 1)
 
     def test_quick_guide_is_a_pdf_with_clickable_portal_link(self) -> None:
         pdf = build_quick_guide_pdf(
             "VT Network Manager",
-            "1.19.0",
+            "1.19.1",
             self.access_data,
         )
 
@@ -83,7 +91,7 @@ class UserDocumentTests(unittest.TestCase):
             "portal_password": "C&D<456>",
         }
 
-        pdf = build_access_sheet_pdf("VT Network Manager", "1.19.0", data)
+        pdf = build_access_sheet_pdf("VT Network Manager", "1.19.1", data)
 
         self.assertTrue(pdf.startswith(b"%PDF-"))
 

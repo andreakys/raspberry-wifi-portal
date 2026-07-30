@@ -11,7 +11,7 @@
 
 ## VT Network Manager
 
-Versione documento: 1.19.0
+Versione documento: 1.19.1
 Data: 30 luglio 2026
 
 ## 1. Scopo
@@ -28,7 +28,7 @@ Il sistema crea un hotspot temporaneo chiamato `Pi-Setup` quando il Raspberry no
 - logo, ragione sociale e contatti Visualtronics nel portale e nei documenti
 - temperatura scheda visibile nella dashboard
 - pulsante di riavvio protetto da login
-- scheda accesso con link e QR cliccabili, scaricabile direttamente in PDF
+- scheda accesso A4 con link e QR cliccabili, ottimizzata per LAN e due radio Wi-Fi
 - scansione manuale delle reti Wi-Fi disponibili dal portale
 - scansione adattiva con riavvio temporaneo hotspot soltanto quando la radio selezionata lo richiede
 - separazione opzionale tra hotspot e Wi-Fi client con due interfacce

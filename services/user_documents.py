@@ -215,11 +215,18 @@ def _company_values(access_data: dict[str, Any]) -> dict[str, str]:
 def _brand_header(
     access_data: dict[str, Any],
     styles: dict[str, ParagraphStyle],
+    *,
+    compact: bool = False,
 ) -> Table:
     company = _company_values(access_data)
     logo: Flowable
     if LOGO_PATH.exists():
-        logo = Image(str(LOGO_PATH), width=32 * mm, height=22.8 * mm)
+        logo_width = 30 * mm if compact else 32 * mm
+        logo = Image(
+            str(LOGO_PATH),
+            width=logo_width,
+            height=logo_width * 178 / 250,
+        )
     else:
         logo = Paragraph("<b>Visualtronics</b>", styles["body"])
 
@@ -240,7 +247,7 @@ def _brand_header(
                 ("LEFTPADDING", (0, 0), (-1, -1), 0),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 0),
                 ("TOPPADDING", (0, 0), (-1, -1), 0),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4 if compact else 6),
                 ("LINEBELOW", (0, 0), (-1, -1), 0.7, LINE),
             ]
         )
@@ -419,8 +426,8 @@ def _hardware_table(
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 8),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 8),
-                ("TOPPADDING", (0, 0), (-1, -1), 6),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
             ]
         )
     )
@@ -435,8 +442,8 @@ def build_access_sheet_pdf(
     styles = _styles()
     portal_url = access_data["portal_url"]
     story: list[Flowable] = [
-        _brand_header(access_data, styles),
-        Spacer(1, 3 * mm),
+        _brand_header(access_data, styles, compact=True),
+        Spacer(1, 2 * mm),
         Paragraph("DATI RISERVATI DI ACCESSO", styles["eyebrow"]),
         Paragraph(f"Scheda accesso - {_safe(page_title)}", styles["title"]),
         Paragraph(
@@ -444,13 +451,13 @@ def build_access_sheet_pdf(
             styles["intro"],
         ),
         _credentials_table(access_data, styles),
-        Spacer(1, 5 * mm),
+        Spacer(1, 3 * mm),
     ]
 
     qr_panel = Table(
         [
             [
-                LinkedQrCode(portal_url, 40 * mm),
+                LinkedQrCode(portal_url, 37 * mm),
                 [
                     Paragraph("Apri il portale", styles["heading"]),
                     Paragraph(
@@ -466,7 +473,7 @@ def build_access_sheet_pdf(
                 ],
             ]
         ],
-        colWidths=[50 * mm, 116 * mm],
+        colWidths=[47 * mm, 119 * mm],
     )
     qr_panel.setStyle(
         TableStyle(
@@ -477,19 +484,19 @@ def build_access_sheet_pdf(
                 ("ALIGN", (0, 0), (0, 0), "CENTER"),
                 ("LEFTPADDING", (0, 0), (-1, -1), 10),
                 ("RIGHTPADDING", (0, 0), (-1, -1), 10),
-                ("TOPPADDING", (0, 0), (-1, -1), 10),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+                ("TOPPADDING", (0, 0), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
             ]
         )
     )
-    story.extend([qr_panel, Spacer(1, 4 * mm)])
+    story.extend([qr_panel, Spacer(1, 3 * mm)])
     hardware_table = _hardware_table(access_data, styles)
     if hardware_table is not None:
         story.extend(
             [
                 Paragraph("Identificazione hardware", styles["heading"]),
                 hardware_table,
-                Spacer(1, 3 * mm),
+                Spacer(1, 2 * mm),
             ]
         )
     story.extend(

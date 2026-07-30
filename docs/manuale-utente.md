@@ -2,8 +2,8 @@
 
 ## VT Network Manager
 
-Versione documento: 1.16.0
-Data: 29 luglio 2026
+Versione documento: 1.17.0
+Data: 30 luglio 2026
 
 ## 1. Scopo
 
@@ -18,7 +18,7 @@ Il sistema crea un hotspot temporaneo chiamato `Pi-Setup` quando il Raspberry no
 - versione applicazione visibile per verificare gli aggiornamenti installati
 - temperatura scheda visibile nella dashboard
 - pulsante di riavvio protetto da login
-- scheda accesso stampabile o salvabile in PDF dal browser
+- scheda accesso con link e QR cliccabili, scaricabile direttamente in PDF
 - scansione manuale delle reti Wi-Fi disponibili dal portale
 - scansione adattiva con riavvio temporaneo hotspot soltanto quando la radio selezionata lo richiede
 - separazione opzionale tra hotspot e Wi-Fi client con due interfacce
@@ -414,14 +414,17 @@ Se hai usato l'installazione guidata e hai lasciato vuota la password portale, l
 /etc/raspberry-wifi-portal/portal.env
 ```
 
-### 7.3 Documenti stampabili e guida rapida
+### 7.3 Documenti PDF e guida rapida
 
-Dopo il login, la sezione `Documenti utente` permette di aprire due pagine stampabili:
+Dopo il login, la sezione `Documenti utente` permette di consultare due documenti:
 
-- `Guida rapida configurazione`, con i passaggi per LAN, Wi-Fi, radio, temperatura e profili salvati
-- `Scheda accesso`, con SSID hotspot, password e indirizzo del portale
+- `Guida rapida configurazione`, con i passaggi per LAN, Wi-Fi, radio, recovery e profili salvati
+- `Scheda accesso`, con SSID hotspot, password, indirizzo e QR del portale
 
-Entrambe possono essere stampate o salvate in PDF dal browser.
+Per ogni documento sono disponibili:
+
+- `Apri`, per consultare l'anteprima HTML e usare eventualmente la stampa del browser
+- `Scarica PDF`, per generare direttamente un PDF A4 con impaginazione costante da telefono o PC
 
 La scheda accesso e' una pagina semplice con:
 
@@ -429,15 +432,19 @@ La scheda accesso e' una pagina semplice con:
 - password hotspot
 - indirizzo portale, ad esempio `http://192.168.4.1`
 - password portale
-- interfacce Wi-Fi rilevate
+- QR del portale
+
+Nel PDF della scheda sia l'indirizzo testuale sia il QR sono cliccabili. Il QR apre il portale dopo che il telefono o il PC e' stato collegato a `Pi-Setup`.
 
 La scheda contiene password operative: stampala o inviala solo a persone autorizzate.
 
+La guida rapida non incorpora temperatura, stato corrente di Pi-Setup o radio rilevate in quel momento. Questi dati cambiano durante il funzionamento e restano visibili nella dashboard. Il PDF contiene invece procedure, differenza tra wlan0 e wlan1 e regole di recovery, quindi puo' essere conservato e distribuito senza diventare subito obsoleto.
+
 Flusso consigliato per la documentazione utente:
 
-1. Apri `Guida rapida configurazione` e salvala in PDF per l'utente del display.
-2. Apri `Scheda accesso` solo se devi consegnare anche SSID e password operative.
-3. Premi `Stampa/PDF` e scegli stampa oppure `Salva come PDF` nel browser.
+1. Premi `Scarica PDF` accanto a `Guida rapida configurazione` per consegnare le istruzioni operative.
+2. Scarica `Scheda accesso` solo se devi consegnare anche SSID e password.
+3. Verifica il link o tocca il QR nel PDF della scheda.
 4. Conserva la scheda accesso con maggiore attenzione perche' contiene password.
 
 La scheda accesso si trova in fondo alla pagina principale, dopo le sezioni operative di rete e Wi-Fi.
@@ -663,7 +670,9 @@ Verifica nel portale la presenza di:
 - sezione `Connessioni salvate dal portale`
 - stato `Gestione automatica hotspot` con motivazione e conto alla rovescia
 - comandi `Attiva 10 min` e `Spegni` per Pi-Setup
-- sezione `Documenti utente` con guida rapida e scheda accesso
+- sezione `Documenti utente` con download PDF diretto
+- scheda accesso con link e QR cliccabili
+- guida rapida senza dati live di temperatura o stato corrente
 
 ## 12. Pubblicazione su GitHub
 
@@ -732,8 +741,8 @@ Il bootstrap scarica una copia pulita della branch `main`, reinstalla il servizi
 - apri `http://192.168.4.1`
 - accedi con la password portale
 - controlla il badge versione
-- usa `Guida rapida configurazione` per consegnare all'utente le istruzioni dell'interfaccia web
-- usa `Scheda accesso` se devi stampare o salvare in PDF i dati di accesso
+- scarica il PDF `Guida rapida configurazione` per consegnare all'utente le istruzioni dell'interfaccia web
+- scarica `Scheda accesso` se devi consegnare i dati di accesso e il QR cliccabile
 - premi `Scansiona reti` per aggiornare le reti disponibili
 - se sei collegato via LAN, il pulsante puo' spegnere temporaneamente l'hotspot senza perdere la pagina
 - se sei collegato tramite hotspot sulla stessa radio, conferma la breve disconnessione e poi ricollegati

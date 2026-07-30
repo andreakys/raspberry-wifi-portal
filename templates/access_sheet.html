@@ -10,12 +10,40 @@
     <main class="print-sheet">
       <header class="print-header">
         <div>
-          <p class="eyebrow">Scheda accesso</p>
+          <p class="eyebrow">Dati riservati di accesso</p>
           <h1>{{ page_title }}</h1>
-          <p class="muted">Versione {{ app_version }}</p>
+          <p class="muted">Scheda accesso - versione {{ app_version }}</p>
         </div>
-        <button type="button" class="secondary-button no-print" onclick="window.print()">Stampa/PDF</button>
+        <div class="print-actions no-print">
+          <a class="primary-button button-link" href="/documents/access-sheet.pdf">Scarica PDF</a>
+          <button type="button" class="secondary-button" onclick="window.print()">Stampa</button>
+        </div>
       </header>
+
+      <p class="print-intro">
+        Collegati all'hotspot temporaneo, quindi usa il link o il QR per aprire la configurazione del display.
+      </p>
+
+      <section class="portal-access-block">
+        <a
+          class="portal-qr-link"
+          href="{{ access_sheet.portal_url }}"
+          target="_blank"
+          rel="noopener"
+          aria-label="Apri il portale {{ access_sheet.portal_url }}"
+        >
+          <img src="/documents/portal-qr.svg" alt="QR per aprire {{ access_sheet.portal_url }}">
+        </a>
+        <div>
+          <span class="label">Apri il portale</span>
+          <h2>Scansiona o tocca il QR</h2>
+          <p>Prima collegati alla rete <strong>{{ access_sheet.hotspot_ssid }}</strong>.</p>
+          <a class="portal-url" href="{{ access_sheet.portal_url }}" target="_blank" rel="noopener">
+            {{ access_sheet.portal_url }}
+          </a>
+          <p class="muted">Anche il QR e il collegamento presenti nel PDF sono cliccabili.</p>
+        </div>
+      </section>
 
       <section class="print-grid">
         <article>
@@ -27,8 +55,8 @@
           <strong>{{ access_sheet.hotspot_password }}</strong>
         </article>
         <article>
-          <span class="label">Portale</span>
-          <strong>{{ access_sheet.portal_url }}</strong>
+          <span class="label">Indirizzo portale</span>
+          <strong><a href="{{ access_sheet.portal_url }}">{{ access_sheet.portal_url }}</a></strong>
         </article>
         <article>
           <span class="label">Password portale</span>
@@ -40,19 +68,14 @@
         <h2>Come usare questa scheda</h2>
         <ol>
           <li>Collega telefono o PC alla rete Wi-Fi indicata come hotspot temporaneo.</li>
-          <li>Apri l'indirizzo del portale nel browser.</li>
-          <li>Inserisci la password portale e configura la rete Wi-Fi definitiva.</li>
+          <li>Inquadra o tocca il QR, oppure apri l'indirizzo del portale nel browser.</li>
+          <li>Inserisci la password portale e configura LAN o collegamento Wi-Fi.</li>
         </ol>
       </section>
 
-      <section class="print-notes">
-        <h2>Interfacce rilevate</h2>
-        <p>
-          Hotspot: <strong>{{ status.hotspot_interface_label }}</strong>.
-          Wi-Fi client attiva: <strong>{{ status.active_client_interface_label or "Nessuna" }}</strong>.
-          Interfacce Wi-Fi rilevate: <strong>{{ status.wifi_interface_labels|join(", ") or "Nessuna" }}</strong>.
-        </p>
-        <p class="muted">Conservare questa scheda con cura: contiene password operative.</p>
+      <section class="security-note">
+        <strong>Conservazione sicura</strong>
+        <p>Questa scheda contiene password operative. Condividila solo con personale autorizzato.</p>
       </section>
     </main>
   </body>

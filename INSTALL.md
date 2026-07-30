@@ -30,7 +30,7 @@ Alla fine collegati all'hotspot configurato e apri:
 http://192.168.4.1
 ```
 
-Dopo il login il portale mostra `Documenti utente`: una guida rapida stampabile/PDF e la scheda accesso con SSID hotspot, password, indirizzo portale e password di accesso.
+Dopo il login il portale mostra `Documenti utente`: la guida rapida e la scheda accesso possono essere scaricate direttamente come PDF. La scheda contiene SSID hotspot, password, indirizzo portale e un QR cliccabile.
 In alto trovi anche il numero di versione, utile per verificare se il servizio sta eseguendo davvero l'ultimo codice installato.
 
 ## Installazione non interattiva

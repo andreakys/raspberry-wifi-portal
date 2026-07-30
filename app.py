@@ -3,9 +3,20 @@ from __future__ import annotations
 import ipaddress
 import time
 from hmac import compare_digest
+from io import BytesIO
 from threading import Lock, RLock, Thread
 
-from flask import Flask, jsonify, redirect, render_template, request, session, url_for
+from flask import (
+    Flask,
+    Response,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    session,
+    url_for,
+)
 
 from config import load_config
 from services.hotspot_recovery import (
@@ -24,6 +35,11 @@ from services.network_status_tcp import NetworkStatusTcpServer, build_network_st
 from services.scan_policy import (
     can_pause_hotspot_without_losing_page,
     hotspot_blocks_scan,
+)
+from services.user_documents import (
+    build_access_sheet_pdf,
+    build_portal_qr_svg,
+    build_quick_guide_pdf,
 )
 
 config = load_config()
@@ -756,6 +772,36 @@ def access_sheet():
     )
 
 
+@app.get("/documents/portal-qr.svg")
+def portal_qr():
+    status = network_manager.current_status()
+    response = Response(
+        build_portal_qr_svg(_access_sheet(status)["portal_url"]),
+        mimetype="image/svg+xml",
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@app.get("/documents/access-sheet.pdf")
+def access_sheet_pdf():
+    status = network_manager.current_status()
+    pdf = build_access_sheet_pdf(
+        config.portal_title,
+        config.app_version,
+        _access_sheet(status),
+    )
+    response = send_file(
+        BytesIO(pdf),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name="vt-network-manager-scheda-accesso.pdf",
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
+
+
 @app.get("/quick-guide")
 def quick_guide():
     status = network_manager.current_status()
@@ -763,10 +809,26 @@ def quick_guide():
         "quick_guide.html",
         page_title=config.portal_title,
         app_version=config.app_version,
-        status=status,
-        recovery=_recovery_state_snapshot(),
         access_sheet=_access_sheet(status),
     )
+
+
+@app.get("/documents/quick-guide.pdf")
+def quick_guide_pdf():
+    status = network_manager.current_status()
+    pdf = build_quick_guide_pdf(
+        config.portal_title,
+        config.app_version,
+        _access_sheet(status),
+    )
+    response = send_file(
+        BytesIO(pdf),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name="vt-network-manager-guida-rapida.pdf",
+    )
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 @app.get("/api/status")

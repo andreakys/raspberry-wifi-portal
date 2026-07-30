@@ -12,27 +12,56 @@
         <div>
           <p class="eyebrow">Guida rapida configurazione</p>
           <h1>{{ page_title }}</h1>
-          <p class="muted">Versione {{ app_version }} - Display a LED</p>
+          <p class="muted">Versione {{ app_version }} - configurazione rete del display</p>
         </div>
-        <button type="button" class="secondary-button no-print" onclick="window.print()">Stampa/PDF</button>
+        <div class="print-actions no-print">
+          <a class="primary-button button-link" href="/documents/quick-guide.pdf">Scarica PDF</a>
+          <button type="button" class="secondary-button" onclick="window.print()">Stampa</button>
+        </div>
       </header>
+
+      <p class="print-intro">
+        Questa guida descrive procedure e regole operative stabili. I valori aggiornati del dispositivo
+        restano sempre visibili nella dashboard.
+      </p>
 
       <section class="quick-summary">
         <div>
-          <span class="label">Portale</span>
-          <strong>{{ access_sheet.portal_url }}</strong>
+          <span class="label">Indirizzo hotspot</span>
+          <strong><a href="{{ access_sheet.portal_url }}">{{ access_sheet.portal_url }}</a></strong>
         </div>
         <div>
-          <span class="label">Pi-Setup</span>
-          <strong>{{ "Attivo" if status.hotspot_active else "Spento" }}</strong>
+          <span class="label">Hotspot temporaneo</span>
+          <strong>{{ access_sheet.hotspot_ssid }}</strong>
         </div>
         <div>
-          <span class="label">Radio client</span>
-          <strong>{{ status.client_wifi_interface_label }}</strong>
+          <span class="label">Radio preferita</span>
+          <strong>wlan1 se presente, altrimenti wlan0</strong>
         </div>
         <div>
-          <span class="label">Temperatura</span>
-          <strong>{{ status.board_temperature.display }} - {{ status.board_temperature.status }}</strong>
+          <span class="label">Documento</span>
+          <strong>Guida stabile - versione {{ app_version }}</strong>
+        </div>
+      </section>
+
+      <section class="portal-access-block compact-access-block quick-section">
+        <a
+          class="portal-qr-link"
+          href="{{ access_sheet.portal_url }}"
+          target="_blank"
+          rel="noopener"
+          aria-label="Apri il portale {{ access_sheet.portal_url }}"
+        >
+          <img src="/documents/portal-qr.svg" alt="QR per aprire {{ access_sheet.portal_url }}">
+        </a>
+        <div>
+          <span class="label">Collegamento iniziale</span>
+          <h2>Apri la configurazione</h2>
+          <p>Collegati a <strong>{{ access_sheet.hotspot_ssid }}</strong>, poi inquadra o tocca il QR.</p>
+          <a class="portal-url" href="{{ access_sheet.portal_url }}" target="_blank" rel="noopener">
+            {{ access_sheet.portal_url }}
+          </a>
+          <p class="muted">Per le password usa la scheda accesso riservata.</p>
         </div>
       </section>
 
@@ -40,8 +69,8 @@
         <h2>1. Accedi al portale</h2>
         <ol>
           <li>Collegati all'hotspot <strong>{{ access_sheet.hotspot_ssid }}</strong>.</li>
-          <li>Apri <strong>{{ access_sheet.portal_url }}</strong> nel browser.</li>
-          <li>Inserisci la password portale. Usa <strong>Mostra</strong> per controllarla.</li>
+          <li>Apri il QR o <a href="{{ access_sheet.portal_url }}">{{ access_sheet.portal_url }}</a>.</li>
+          <li>Inserisci la password riportata nella scheda accesso. Usa <strong>Mostra</strong> per controllarla.</li>
         </ol>
       </section>
 
@@ -49,14 +78,12 @@
         <h2>2. Riconosci le radio Wi-Fi</h2>
         <ul>
           <li><strong>wlan0 - Wi-Fi integrata:</strong> radio presente sulla scheda.</li>
-          {% if "wlan1" in status.wifi_interface_names %}
-          <li><strong>wlan1 - dongle USB Wi-Fi:</strong> radio usata automaticamente per scansione e connessione finale.</li>
-          {% endif %}
+          <li><strong>wlan1 - dongle USB Wi-Fi:</strong> compare solo quando il dongle e' collegato.</li>
         </ul>
         <p>
-          Radio rilevate: <strong>{{ status.wifi_interface_labels|join(", ") or "Nessuna" }}</strong>.
-          Se il dongle USB non e' installato, wlan1 non compare e il portale usa wlan0 anche per la connessione finale.
-          Quando entrambe sono presenti, wlan0 resta riservata all'hotspot.
+          Senza dongle il portale usa wlan0 sia per Pi-Setup sia per la connessione finale.
+          Quando entrambe sono presenti, wlan0 mantiene l'hotspot e wlan1 viene preferita automaticamente
+          per scansione e collegamento Wi-Fi.
         </p>
       </section>
 
@@ -87,7 +114,7 @@
       </section>
 
       <section class="print-notes quick-section">
-        <h2>5. Gestisci Pi-Setup</h2>
+        <h2>5. Comprendi la gestione di Pi-Setup</h2>
         <ul>
           <li>Con wlan1 connessa stabilmente, Pi-Setup si spegne dopo circa 30 secondi.</li>
           <li>Con LAN stabile, Pi-Setup si spegne dopo circa 2 minuti.</li>
@@ -102,26 +129,7 @@
       </section>
 
       <section class="print-notes quick-section">
-        <h2>6. Controlla la temperatura</h2>
-        <table class="temperature-table">
-          <thead>
-            <tr><th>Temperatura</th><th>Indicazione</th><th>Azione</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>&lt; 60 C</td><td>Normale</td><td>Nessuna azione.</td></tr>
-            <tr><td>60-69 C</td><td>Sotto osservazione</td><td>Controlla prese d'aria e polvere.</td></tr>
-            <tr><td>70-79 C</td><td>Alta</td><td>Migliora ventilazione e raffreddamento.</td></tr>
-            <tr><td>&gt;= 80 C</td><td>Critica</td><td>Controlla subito ventole e flusso d'aria.</td></tr>
-          </tbody>
-        </table>
-        <p>
-          Il Wi-Fi attivo produce un piccolo aumento di calore, soprattutto con traffico continuo. Nel vano del
-          tabellone incidono maggiormente temperatura ambiente, alimentatori LED, pannelli e ventilazione.
-        </p>
-      </section>
-
-      <section class="print-notes quick-section">
-        <h2>7. Elimina una configurazione precedente</h2>
+        <h2>6. Elimina una configurazione precedente</h2>
         <p>
           In <strong>Connessioni salvate dal portale</strong> elimina un profilo <strong>setup-*</strong> e ricrealo.
           I profili di sistema e l'hotspot temporaneo restano protetti.

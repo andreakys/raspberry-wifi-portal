@@ -58,7 +58,7 @@ curl -fsSL https://raw.githubusercontent.com/andreakys/raspberry-wifi-portal/mai
 - numero versione visibile in login, dashboard e API status
 - temperatura scheda visibile nella dashboard
 - pulsante di riavvio protetto da login
-- scheda accesso stampabile o salvabile in PDF dal browser
+- scheda accesso con link e QR cliccabili, scaricabile direttamente in PDF
 - pulsante di scansione reti Wi-Fi disponibili
 - scansione adattiva con riavvio temporaneo hotspot soltanto quando la radio selezionata lo richiede
 - separazione opzionale tra interfaccia hotspot e interfaccia Wi-Fi client
@@ -102,9 +102,11 @@ raspberry-wifi-portal/
 |-- requirements.txt
 |-- services/
 |   |-- __init__.py
+|   |-- hotspot_recovery.py
 |   |-- network_manager.py
 |   |-- network_status_tcp.py
-|   `-- scan_policy.py
+|   |-- scan_policy.py
+|   `-- user_documents.py
 |-- static/
 |   `-- styles.css
 |-- systemd/
@@ -113,6 +115,7 @@ raspberry-wifi-portal/
 |   |-- access_sheet.html
 |   |-- index.html
 |   |-- login.html
+|   |-- quick_guide.html
 |   `-- status.html
 `-- scripts/
     |-- apply_recovery_profile.sh
@@ -146,11 +149,17 @@ raspberry-wifi-portal/
 - `services/scan_policy.py`
   Decide se la radio selezionata richiede lo spegnimento dell'hotspot e se il browser dispone di un collegamento alternativo sicuro.
 
+- `services/user_documents.py`
+  Genera QR SVG e PDF A4 della guida rapida e della scheda accesso, mantenendo cliccabili link e QR.
+
 - `templates/index.html`
-  Pagina principale con form di configurazione, scheda accesso stampabile e scansione reti.
+  Pagina principale con form di configurazione, documenti PDF e scansione reti.
 
 - `templates/access_sheet.html`
-  Pagina pulita per stampa o salvataggio PDF dei dati di accesso al portale.
+  Anteprima pulita dei dati di accesso con link e QR cliccabili.
+
+- `templates/quick_guide.html`
+  Anteprima della guida operativa stabile, senza valori live del dispositivo.
 
 - `templates/login.html`
   Pagina di accesso protetto prima delle impostazioni.
@@ -212,8 +221,8 @@ Nel login e nei campi password Wi-Fi/802.1X e' disponibile il pulsante `Mostra`,
 
 Dopo il login, la sezione `Documenti utente` permette di aprire:
 
-- una guida rapida stampabile/PDF per configurare LAN, Wi-Fi, radio e controllare la temperatura
-- la scheda accesso con i dati operativi
+- una guida rapida stabile per configurare LAN, Wi-Fi, radio e recovery, senza valori live che possono cambiare
+- la scheda accesso con i dati operativi, il link e il QR del portale
 
 La scheda accesso contiene:
 
@@ -221,9 +230,9 @@ La scheda accesso contiene:
 - password hotspot
 - indirizzo del portale
 - password portale
-- interfacce Wi-Fi rilevate
+- QR cliccabile per aprire il portale
 
-Da quella pagina puoi usare `Stampa/PDF` del browser per stampare la scheda o salvarla come PDF. La scheda contiene password operative, quindi va condivisa solo con persone autorizzate.
+I pulsanti `Scarica PDF` generano direttamente documenti A4 pronti da inviare o stampare. Nella scheda accesso, sia l'indirizzo sia il QR restano cliccabili anche dentro il PDF. E' comunque disponibile l'anteprima HTML con il comando `Stampa`. La scheda contiene password operative, quindi va condivisa solo con persone autorizzate.
 
 La dashboard mostra la `Temperatura dispositivo`, letta da `/sys/class/thermal/thermal_zone0/temp`, e la classifica come `Normale`, `Sotto osservazione`, `Alta` o `Critica`. Il Wi-Fi attivo puo' aggiungere un po' di calore, soprattutto con traffico continuo, ma in un tabellone chiuso incidono maggiormente alimentatori LED, pannelli, carico del processore, temperatura ambiente e ventilazione.
 
@@ -251,7 +260,7 @@ Se accedi dal PC tramite cavo LAN, lo stesso pulsante puo' spegnere temporaneame
 
 Per capire se hai una seconda interfaccia Wi-Fi, guarda il riquadro `Interfacce Wi-Fi` in alto: `1` indica solo la radio della scheda, `2` con nomi come `wlan0, wlan1` indica anche un dongle USB. Quando entrambe sono presenti, il portale seleziona automaticamente `wlan1` per scansione e connessione finale e riserva `wlan0` all'hotspot.
 
-Se con entrambe le radio il form permette ancora di usare `wlan0` per il client, verifica che il portale mostri almeno la versione `1.15.0`. La versione `1.16.0` aggiunge la gestione automatica di accensione e spegnimento di `Pi-Setup`.
+Se con entrambe le radio il form permette ancora di usare `wlan0` per il client, verifica che il portale mostri almeno la versione `1.15.0`. La versione `1.16.0` aggiunge la gestione automatica di accensione e spegnimento di `Pi-Setup`; la `1.17.0` aggiunge i PDF diretti e i collegamenti QR cliccabili.
 
 ### 4. Provisioning
 
@@ -473,6 +482,7 @@ La sottosezione `Connessioni salvate dal portale` permette di eliminare profili 
 ### Python
 
 - `Flask`
+- `ReportLab`
 
 ## Installer diretto
 
@@ -555,7 +565,7 @@ grep -E 'PORTAL_TITLE|APP_VERSION' /etc/raspberry-wifi-portal/portal.env
 sudo systemctl restart raspberry-wifi-portal.service
 ```
 
-Il portale aggiornato mostra un badge `Versione 1.16.0`, lo stato `Gestione automatica hotspot`, i comandi `Attiva 10 min` e `Spegni`, la scheda `Radio Wi-Fi client`, la temperatura e le etichette delle radio rilevate. Con due radio, wlan1 e' selezionata automaticamente e wlan0 appare riservata all'hotspot. Se non trovi queste funzioni, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
+Il portale aggiornato mostra un badge `Versione 1.17.0`, lo stato `Gestione automatica hotspot`, i comandi `Attiva 10 min` e `Spegni`, la scheda `Radio Wi-Fi client`, la temperatura, le etichette delle radio rilevate e i pulsanti `Scarica PDF` nei documenti utente. Con due radio, wlan1 e' selezionata automaticamente e wlan0 appare riservata all'hotspot. Se non trovi queste funzioni, il servizio sta ancora usando una copia precedente o non e' stato reinstallato/riavviato.
 
 ## Aggiornamento da archivio
 

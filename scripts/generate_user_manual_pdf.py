@@ -27,8 +27,8 @@ TMP_DIR = ROOT / "tmp" / "pdfs"
 OUTPUT_PDF = OUTPUT_DIR / "manuale-utente-raspberry-wifi-portal.pdf"
 DOCS_PDF = ROOT / "docs" / "manuale-utente-raspberry-wifi-portal.pdf"
 CODE_WRAP_WIDTH = 88
-DOCUMENT_VERSION = "1.16.0"
-DOCUMENT_DATE = "29 luglio 2026"
+DOCUMENT_VERSION = "1.17.0"
+DOCUMENT_DATE = "30 luglio 2026"
 
 
 def build_styles():
@@ -265,14 +265,14 @@ def ip_management_diagram() -> Drawing:
 
 def access_sheet_diagram() -> Drawing:
     return workflow_diagram(
-        "Documenti utente - stampa o PDF dal browser",
+        "Documenti utente - PDF diretto e collegamenti cliccabili",
         [
             ("Guida/Scheda", "istruzioni e accesso", "#ffffff"),
-            ("Stampa/PDF", "browser", "#e8f1fb"),
+            ("Scarica PDF", "impaginazione A4", "#e8f1fb"),
             ("Consegna", "utente autorizzato", "#fff7ed"),
             ("Setup", "configura rete", "#eaf7ef"),
         ],
-        "La scheda contiene SSID, password hotspot, URL portale e password portale.",
+        "La scheda contiene credenziali, link e QR cliccabili del portale.",
     )
 
 

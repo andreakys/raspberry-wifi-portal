@@ -1,0 +1,67 @@
+from __future__ import annotations
+
+import unittest
+
+from services.user_documents import (
+    build_access_sheet_pdf,
+    build_portal_qr_svg,
+    build_quick_guide_pdf,
+)
+
+
+class UserDocumentTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.access_data = {
+            "portal_url": "http://192.168.4.1",
+            "hotspot_ssid": "Pi-Setup",
+            "hotspot_password": "HotspotTest123!",
+            "portal_password": "PortalTest456!",
+            "portal_title": "VT Network Manager",
+        }
+
+    def test_portal_qr_is_svg(self) -> None:
+        svg = build_portal_qr_svg(self.access_data["portal_url"])
+
+        self.assertIn(b"<svg", svg)
+        self.assertIn(b"</svg>", svg)
+        self.assertGreater(len(svg), 1_000)
+
+    def test_access_sheet_is_a_pdf_with_clickable_portal_link(self) -> None:
+        pdf = build_access_sheet_pdf(
+            "VT Network Manager",
+            "1.17.0",
+            self.access_data,
+        )
+
+        self.assertTrue(pdf.startswith(b"%PDF-"))
+        self.assertGreater(len(pdf), 4_000)
+        self.assertGreaterEqual(pdf.count(b"http://192.168.4.1"), 2)
+        self.assertIn(b"/URI", pdf)
+
+    def test_quick_guide_is_a_pdf_with_clickable_portal_link(self) -> None:
+        pdf = build_quick_guide_pdf(
+            "VT Network Manager",
+            "1.17.0",
+            self.access_data,
+        )
+
+        self.assertTrue(pdf.startswith(b"%PDF-"))
+        self.assertGreater(len(pdf), 7_000)
+        self.assertIn(b"http://192.168.4.1", pdf)
+        self.assertIn(b"/URI", pdf)
+
+    def test_special_characters_in_credentials_do_not_break_pdf(self) -> None:
+        data = {
+            **self.access_data,
+            "hotspot_ssid": "Display <Nord>",
+            "hotspot_password": "A&B<123>",
+            "portal_password": "C&D<456>",
+        }
+
+        pdf = build_access_sheet_pdf("VT Network Manager", "1.17.0", data)
+
+        self.assertTrue(pdf.startswith(b"%PDF-"))
+
+
+if __name__ == "__main__":
+    unittest.main()
